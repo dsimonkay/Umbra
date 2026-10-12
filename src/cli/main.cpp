@@ -5,9 +5,9 @@
 // Useful for quick checks and benchmarks, and it lets Claude Code look at the
 // result of a change (it can open PNG files, but it cannot see your window).
 
-#include "core/framebuffer.hpp"
-#include "core/render.hpp"
-#include "io/image_io.hpp"
+#include "core/framebuffer.h"
+#include "core/render.h"
+#include "io/image_io.h"
 
 #include <raylib.h>
 

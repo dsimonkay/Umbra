@@ -1,4 +1,4 @@
-#include "app/theme.hpp"
+#include "app/theme.h"
 
 #include <rlImGui.h>
 

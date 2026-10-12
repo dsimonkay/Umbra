@@ -1,5 +1,5 @@
-#ifndef UMBRA_CORE_PIXEL_HPP
-#define UMBRA_CORE_PIXEL_HPP
+#ifndef UMBRA_CORE_PIXEL_H
+#define UMBRA_CORE_PIXEL_H
 
 #include <cstdint>
 
@@ -21,4 +21,4 @@ static_assert(sizeof(Pixel) == 4, "Pixel must stay tightly packed (texture uploa
 
 } // namespace umbra
 
-#endif // UMBRA_CORE_PIXEL_HPP
+#endif // UMBRA_CORE_PIXEL_H

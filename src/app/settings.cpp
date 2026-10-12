@@ -1,4 +1,4 @@
-#include "app/settings.hpp"
+#include "app/settings.h"
 
 #include <charconv>
 #include <cstdlib>

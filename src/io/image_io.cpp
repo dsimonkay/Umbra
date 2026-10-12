@@ -1,4 +1,4 @@
-#include "io/image_io.hpp"
+#include "io/image_io.h"
 
 #include <raylib.h>
 

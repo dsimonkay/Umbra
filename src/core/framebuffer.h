@@ -1,7 +1,7 @@
-#ifndef UMBRA_CORE_FRAMEBUFFER_HPP
-#define UMBRA_CORE_FRAMEBUFFER_HPP
+#ifndef UMBRA_CORE_FRAMEBUFFER_H
+#define UMBRA_CORE_FRAMEBUFFER_H
 
-#include "core/pixel.hpp"
+#include "core/pixel.h"
 
 #include <cassert>
 #include <cstddef>
@@ -52,4 +52,4 @@ private:
 
 } // namespace umbra
 
-#endif // UMBRA_CORE_FRAMEBUFFER_HPP
+#endif // UMBRA_CORE_FRAMEBUFFER_H

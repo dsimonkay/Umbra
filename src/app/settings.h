@@ -1,5 +1,5 @@
-#ifndef UMBRA_APP_SETTINGS_HPP
-#define UMBRA_APP_SETTINGS_HPP
+#ifndef UMBRA_APP_SETTINGS_H
+#define UMBRA_APP_SETTINGS_H
 
 #include <expected>
 #include <filesystem>
@@ -41,4 +41,4 @@ struct Settings
 
 } // namespace umbra::app
 
-#endif // UMBRA_APP_SETTINGS_HPP
+#endif // UMBRA_APP_SETTINGS_H

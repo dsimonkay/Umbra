@@ -1,7 +1,7 @@
-#ifndef UMBRA_IO_IMAGE_IO_HPP
-#define UMBRA_IO_IMAGE_IO_HPP
+#ifndef UMBRA_IO_IMAGE_IO_H
+#define UMBRA_IO_IMAGE_IO_H
 
-#include "core/framebuffer.hpp"
+#include "core/framebuffer.h"
 
 #include <expected>
 #include <filesystem>
@@ -20,4 +20,4 @@ namespace umbra
 
 } // namespace umbra
 
-#endif // UMBRA_IO_IMAGE_IO_HPP
+#endif // UMBRA_IO_IMAGE_IO_H

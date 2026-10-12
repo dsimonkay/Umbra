@@ -1,7 +1,7 @@
-#ifndef UMBRA_CORE_RENDER_HPP
-#define UMBRA_CORE_RENDER_HPP
+#ifndef UMBRA_CORE_RENDER_H
+#define UMBRA_CORE_RENDER_H
 
-#include "core/pixel.hpp"
+#include "core/pixel.h"
 
 #include <string_view>
 
@@ -31,4 +31,4 @@ inline constexpr std::string_view milestone{"M0 - skeleton"};
 
 } // namespace umbra
 
-#endif // UMBRA_CORE_RENDER_HPP
+#endif // UMBRA_CORE_RENDER_H

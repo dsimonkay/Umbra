@@ -15,13 +15,13 @@
 //                              (for the docs, and so Claude Code can "see" the UI)
 //
 // Settings (the UI scale) and the panel layout are kept in the user's config directory,
-// see app/settings.hpp. Screenshot mode ignores both, so its pictures are reproducible.
+// see app/settings.h. Screenshot mode ignores both, so its pictures are reproducible.
 
-#include "app/settings.hpp"
-#include "app/theme.hpp"
-#include "core/framebuffer.hpp"
-#include "core/render.hpp"
-#include "io/image_io.hpp"
+#include "app/settings.h"
+#include "app/theme.h"
+#include "core/framebuffer.h"
+#include "core/render.h"
+#include "io/image_io.h"
 
 #include <imgui.h>
 #include <imgui_internal.h> // DockBuilder*, BeginViewportSideBar
@@ -93,7 +93,7 @@ struct AppState
     std::string status{"Ready"};
     Clock::time_point status_time{};
 
-    umbra::app::Settings settings;       // what the user chose (see app/settings.hpp)
+    umbra::app::Settings settings;       // what the user chose (see app/settings.h)
     std::filesystem::path settings_path; // where to save it; empty: don't save (screenshot mode)
     float applied_ui_scale{0.0f};        // the scale the theme is currently built for
 

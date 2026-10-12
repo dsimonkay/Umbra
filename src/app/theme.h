@@ -1,5 +1,5 @@
-#ifndef UMBRA_APP_THEME_HPP
-#define UMBRA_APP_THEME_HPP
+#ifndef UMBRA_APP_THEME_H
+#define UMBRA_APP_THEME_H
 
 #include <imgui.h>
 #include <raylib.h>
@@ -43,4 +43,4 @@ void ApplyTheme(float scale);
 
 } // namespace umbra::ui
 
-#endif // UMBRA_APP_THEME_HPP
+#endif // UMBRA_APP_THEME_H
