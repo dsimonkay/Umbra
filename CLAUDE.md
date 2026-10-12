@@ -34,7 +34,7 @@ There is also a `debug` preset (asserts on). Build directories are `build/<prese
 ## Architecture
 
 - `src/core/`: the renderer. Plain C++, **no raylib or ImGui includes**. Keep it that way: in M9 this
-  logic moves to CUDA. `render_pixel()` in `render.cpp` is the current entry point.
+  logic moves to CUDA. `RenderPixel()` in `render.cpp` is the current entry point.
 - `src/io/`: framebuffer to PNG (raylib's image export; no window needed).
 - `src/app/`: the GUI. raylib window + Dear ImGui docking via rlImGui. `main.cpp` has the app state, the
   progressive row scheduler (12 ms budget per frame, UI thread) and the panels; `theme.cpp` has the
@@ -66,8 +66,9 @@ If you are not sure which kind a task is, ask in one sentence.
   the baseline is GCC 13; `<print>`, `std::generator` and deducing `this` need GCC 14, `<mdspan>` needs
   GCC 15 (see the cheat sheet at the end of the roadmap).
 - Floating point: compare values and images with a tolerance, never byte for byte.
-- Follow the existing style (`.clang-format`: Allman braces, 4 spaces, 120 columns; `snake_case`;
-  brace initialization).
+- Follow the existing style (`.clang-format`: Allman braces, 4 spaces, 120 columns; brace
+  initialization). Naming (`.clang-tidy`): `snake_case` variables, parameters and members (private
+  members end with `_`); `CamelCase` types and functions/methods; `lower_case` namespaces.
 - Commit only when asked. Suggest a short imperative commit message in English.
 
 ## Session rituals

@@ -49,7 +49,7 @@ What is there:
   being drawn (*Slow motion* makes this very visible). *Save PNG* writes to `./renders/`.
 - `umbra-cli`: renders to a PNG without opening a window.
 - `umbra --screenshot file.png`: renders, saves a picture of the whole window, quits.
-- `umbra::render_pixel(x, y, width, height)` in `src/core/render.cpp` is the function the app calls for
+- `umbra::RenderPixel(x, y, width, height)` in `src/core/render.cpp` is the function the app calls for
   every pixel. At the moment it draws a checkerboard.
 
 Your first session (≈ 30–60 minutes):
@@ -67,7 +67,7 @@ colors come from the ray directions.
 
 Steps:
 
-1. [ ] **Gradient.** In `render_pixel`: red = x / (width − 1), green = y / (height − 1), blue = 0
+1. [ ] **Gradient.** In `RenderPixel`: red = x / (width − 1), green = y / (height − 1), blue = 0
    (this is the RTiOW chapter 2 image). It is a trivial change, and it gets you started.
 2. [ ] **Colors as floats.** Let the rendering math work with colors in [0, 1] and convert to `Pixel`
    in exactly one place (`to_pixel(color)`, with clamping). Every later milestone depends on this.
@@ -140,7 +140,7 @@ watch it.
 Steps:
 
 1. [ ] **Camera class** (RTiOW 7): precompute the viewport once and keep scene + camera out of
-   globals. This replaces the bare `render_pixel` function with your own design
+   globals. This replaces the bare `RenderPixel` function with your own design
    (e.g. `camera.sample(x, y, rng)`).
 2. [ ] **Random numbers** with `<random>`: one engine, passed explicitly (it becomes per-thread in M8).
    Why not `rand()`?

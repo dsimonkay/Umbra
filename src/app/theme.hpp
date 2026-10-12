@@ -18,10 +18,10 @@ inline constexpr ImU32 hud_text = IM_COL32(220, 220, 225, 255);
 
 /// @brief Make rlImGui load our UI font (Roboto + Font Awesome icons) instead of
 ///        the default one. Call it before rlImGuiSetup().
-void install_font_loader();
+void InstallFontLoader();
 
 /// @brief The "pro grey" look: colors, roundings, spacing. Call it after rlImGuiSetup().
-void apply_theme();
+void ApplyTheme();
 
 } // namespace umbra::ui
 

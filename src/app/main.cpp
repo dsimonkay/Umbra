@@ -148,7 +148,7 @@ void advance_render(AppState &app)
         const int y = app.next_row;
         for (int x{0}; x < width; ++x)
         {
-            app.framebuffer.put_pixel(x, y, umbra::render_pixel(x, y, width, height));
+            app.framebuffer.put_pixel(x, y, umbra::RenderPixel(x, y, width, height));
         }
         ++app.next_row;
 
@@ -178,8 +178,8 @@ void upload_texture(AppState &app)
 
 void save_snapshot(AppState &app)
 {
-    const std::filesystem::path path = std::filesystem::path{"renders"} / umbra::timestamped_file_name();
-    if (const auto written = umbra::write_png(app.framebuffer, path); written)
+    const std::filesystem::path path = std::filesystem::path{"renders"} / umbra::GetTimestampedFileName();
+    if (const auto written = umbra::WritePng(app.framebuffer, path); written)
     {
         set_status(app, std::format("Saved {}", path.string()));
     }
@@ -541,9 +541,9 @@ int main(int argc, char **argv)
         MaximizeWindow();
     }
 
-    umbra::ui::install_font_loader();
+    umbra::ui::InstallFontLoader();
     rlImGuiSetup(true);
-    umbra::ui::apply_theme();
+    umbra::ui::ApplyTheme();
 
     ImGuiIO &io = ImGui::GetIO();
     io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;

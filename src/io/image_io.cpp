@@ -9,7 +9,7 @@
 namespace umbra
 {
 
-std::expected<void, std::string> write_png(const Framebuffer &framebuffer, const std::filesystem::path &path)
+std::expected<void, std::string> WritePng(const Framebuffer &framebuffer, const std::filesystem::path &path)
 {
     if (framebuffer.width() == 0 || framebuffer.height() == 0)
     {
@@ -40,12 +40,14 @@ std::expected<void, std::string> write_png(const Framebuffer &framebuffer, const
     {
         return std::unexpected{std::format("raylib could not write '{}'", path.string())};
     }
+
     return {};
 }
 
-std::string timestamped_file_name(const std::string &prefix)
+std::string GetTimestampedFileName(const std::string &prefix)
 {
     using namespace std::chrono;
+
     const auto now = floor<seconds>(system_clock::now());
     try
     {

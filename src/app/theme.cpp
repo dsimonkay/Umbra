@@ -52,12 +52,12 @@ constexpr ImVec4 rgb(const int r, const int g, const int b, const float alpha = 
 
 } // namespace
 
-void install_font_loader()
+void InstallFontLoader()
 {
     rlImGuiSetLoadFontsCallback(load_fonts);
 }
 
-void apply_theme()
+void ApplyTheme()
 {
     ImGuiStyle &style = ImGui::GetStyle();
 

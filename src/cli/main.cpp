@@ -24,11 +24,12 @@
 namespace
 {
 
+/// @brief  Command-line options for the umbra-cli application.
 struct Options
 {
-    int width{960};
-    int height{540};
-    std::filesystem::path output{"renders/cli.png"};
+    int width{960};                                  //< The width of the rendered image.
+    int height{540};                                 //< The height of the rendered image.
+    std::filesystem::path output{"renders/cli.png"}; //< The output file path for the rendered image.
 };
 
 constexpr std::string_view usage{"usage: umbra-cli [--width N] [--height N] [--out path.png]\n"};
@@ -81,8 +82,15 @@ std::expected<Options, int> parse_options(const std::vector<std::string_view> &a
             std::cerr << "error: '" << value << "' is not a positive integer\n";
             return std::unexpected{EXIT_FAILURE};
         }
+        else if (*number < 2)
+        {
+            std::cerr << "error: " << (arg == "--width" ? "width" : "height") << " must be at least 2\n";
+            return std::unexpected{EXIT_FAILURE};
+        }
+
         (arg == "--width" ? options.width : options.height) = *number;
     }
+
     return options;
 }
 
@@ -105,12 +113,12 @@ int main(int argc, char **argv)
     {
         for (int x{0}; x < framebuffer.width(); ++x)
         {
-            framebuffer.put_pixel(x, y, umbra::render_pixel(x, y, framebuffer.width(), framebuffer.height()));
+            framebuffer.put_pixel(x, y, umbra::RenderPixel(x, y, framebuffer.width(), framebuffer.height()));
         }
     }
     const std::chrono::duration<double> elapsed = std::chrono::steady_clock::now() - start;
 
-    if (const auto written = umbra::write_png(framebuffer, options->output); !written)
+    if (const auto written = umbra::WritePng(framebuffer, options->output); !written)
     {
         std::cerr << "error: " << written.error() << '\n';
         return EXIT_FAILURE;

@@ -41,8 +41,8 @@ public:
 private:
     [[nodiscard]] std::size_t index(const int x, const int y) const
     {
-        assert(x >= 0 && x < width_ && y >= 0 && y < height_);
-        return static_cast<std::size_t>(y) * static_cast<std::size_t>(width_) + static_cast<std::size_t>(x);
+        assert((x >= 0) && (x < width_) && (y >= 0) && (y < height_));
+        return (static_cast<std::size_t>(y) * static_cast<std::size_t>(width_)) + static_cast<std::size_t>(x);
     }
 
     int width_{0};
