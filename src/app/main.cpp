@@ -10,9 +10,14 @@
 //
 // Command line:
 //   umbra                      normal start
+//   umbra --ui-scale 1.5       use this UI scale for this run (also "150%" or "auto")
 //   umbra --screenshot a.png   render, save a picture of the whole window, quit
 //                              (for the docs, and so Claude Code can "see" the UI)
+//
+// Settings (the UI scale) and the panel layout are kept in the user's config directory,
+// see app/settings.hpp. Screenshot mode ignores both, so its pictures are reproducible.
 
+#include "app/settings.hpp"
 #include "app/theme.hpp"
 #include "core/framebuffer.hpp"
 #include "core/render.hpp"
@@ -61,6 +66,14 @@ constexpr std::array resolutions{
 constexpr const char *viewport_window_title{ICON_FA_IMAGE "  Viewport###Viewport"};
 constexpr const char *render_window_title{ICON_FA_SLIDERS "  Render###Render"};
 
+// UI scale: by default the system's (see ui::SystemScale()), or a fixed value chosen
+// under View > UI scale. Useful under WSLg, where Windows' display scaling does not
+// reach Linux apps.
+constexpr std::array ui_scale_presets{1.0f, 1.25f, 1.5f, 1.75f, 2.0f};
+constexpr float min_ui_scale{0.75f};
+constexpr float max_ui_scale{3.0f};
+constexpr float ui_scale_step{0.25f};
+
 /// Everything the application remembers between frames.
 struct AppState
 {
@@ -80,6 +93,10 @@ struct AppState
     std::string status{"Ready"};
     Clock::time_point status_time{};
 
+    umbra::app::Settings settings;       // what the user chose (see app/settings.hpp)
+    std::filesystem::path settings_path; // where to save it; empty: don't save (screenshot mode)
+    float applied_ui_scale{0.0f};        // the scale the theme is currently built for
+
     bool show_imgui_demo{false};
     bool open_about{false};
     bool reset_layout{false};
@@ -90,30 +107,30 @@ struct AppState
 // Rendering
 // ---------------------------------------------------------------------------
 
-[[nodiscard]] bool is_rendering(const AppState &app)
+[[nodiscard]] bool IsRendering(const AppState &app)
 {
-    return app.next_row < app.framebuffer.height();
+    return app.next_row < app.framebuffer.Height();
 }
 
-[[nodiscard]] float render_progress(const AppState &app)
+[[nodiscard]] float RenderProgress(const AppState &app)
 {
-    const int height = app.framebuffer.height();
+    const int height = app.framebuffer.Height();
     return height > 0 ? static_cast<float>(app.next_row) / static_cast<float>(height) : 0.0f;
 }
 
-void set_status(AppState &app, std::string message)
+void SetStatus(AppState &app, std::string message)
 {
     app.status = std::move(message);
     app.status_time = Clock::now();
 }
 
 /// Start rendering from the first row; resize the image and the texture if needed.
-void restart_render(AppState &app)
+void RestartRender(AppState &app)
 {
     const Resolution &resolution = resolutions[app.resolution_index];
-    if (resolution.width != app.framebuffer.width() || resolution.height != app.framebuffer.height())
+    if (resolution.width != app.framebuffer.Width() || resolution.height != app.framebuffer.Height())
     {
-        app.framebuffer.resize(resolution.width, resolution.height);
+        app.framebuffer.Resize(resolution.width, resolution.height);
 
         if (IsTextureValid(app.texture))
         {
@@ -127,28 +144,28 @@ void restart_render(AppState &app)
 
     app.next_row = 0;
     app.compute_time = {};
-    set_status(app, "Rendering...");
+    SetStatus(app, "Rendering...");
 }
 
 /// Render rows until this frame's time budget is used up, so the UI stays smooth.
-void advance_render(AppState &app)
+void AdvanceRender(AppState &app)
 {
-    if (!is_rendering(app))
+    if (!IsRendering(app))
     {
         return;
     }
 
     constexpr std::chrono::milliseconds frame_budget{12};
-    const int width = app.framebuffer.width();
-    const int height = app.framebuffer.height();
+    const int width = app.framebuffer.Width();
+    const int height = app.framebuffer.Height();
     const auto frame_start = Clock::now();
 
-    while (is_rendering(app))
+    while (IsRendering(app))
     {
         const int y = app.next_row;
         for (int x{0}; x < width; ++x)
         {
-            app.framebuffer.put_pixel(x, y, umbra::RenderPixel(x, y, width, height));
+            app.framebuffer.PutPixel(x, y, umbra::RenderPixel(x, y, width, height));
         }
         ++app.next_row;
 
@@ -161,31 +178,72 @@ void advance_render(AppState &app)
     app.texture_dirty = true;
     app.compute_time += Clock::now() - frame_start;
 
-    if (!is_rendering(app))
+    if (!IsRendering(app))
     {
-        set_status(app, std::format("Rendered {} x {} in {:.3f} s", width, height, app.compute_time.count()));
+        SetStatus(app, std::format("Rendered {} x {} in {:.3f} s", width, height, app.compute_time.count()));
     }
 }
 
-void upload_texture(AppState &app)
+void UploadTexture(AppState &app)
 {
     if (app.texture_dirty)
     {
-        UpdateTexture(app.texture, app.framebuffer.data());
+        UpdateTexture(app.texture, app.framebuffer.Data());
         app.texture_dirty = false;
     }
 }
 
-void save_snapshot(AppState &app)
+void SaveSnapshot(AppState &app)
 {
     const std::filesystem::path path = std::filesystem::path{"renders"} / umbra::GetTimestampedFileName();
     if (const auto written = umbra::WritePng(app.framebuffer, path); written)
     {
-        set_status(app, std::format("Saved {}", path.string()));
+        SetStatus(app, std::format("Saved {}", path.string()));
     }
     else
     {
-        set_status(app, std::format("Save failed: {}", written.error()));
+        SetStatus(app, std::format("Save failed: {}", written.error()));
+    }
+}
+
+// ---------------------------------------------------------------------------
+// UI scale
+// ---------------------------------------------------------------------------
+
+/// The UI scale in effect: the fixed one from the settings, or else the system's.
+[[nodiscard]] float EffectiveUiScale(const AppState &app)
+{
+    return std::clamp(app.settings.ui_scale.value_or(umbra::ui::SystemScale()), min_ui_scale, max_ui_scale);
+}
+
+/// Change the UI scale setting (empty: automatic) and save it right away.
+/// The theme picks up the new scale at the start of the next frame.
+void SetUiScale(AppState &app, std::optional<float> scale)
+{
+    if (scale)
+    {
+        scale = std::clamp(*scale, min_ui_scale, max_ui_scale);
+    }
+    if (scale == app.settings.ui_scale)
+    {
+        return;
+    }
+    app.settings.ui_scale = scale;
+
+    const std::string description =
+        scale ? std::format("UI scale: {:.0f}%", *scale * 100.0f)
+              : std::format("UI scale: automatic ({:.0f}%)", umbra::ui::SystemScale() * 100.0f);
+    if (app.settings_path.empty())
+    {
+        SetStatus(app, description);
+    }
+    else if (const auto saved = umbra::app::SaveSettings(app.settings, app.settings_path); saved)
+    {
+        SetStatus(app, description + " (saved)");
+    }
+    else
+    {
+        SetStatus(app, std::format("{} (not saved: {})", description, saved.error()));
     }
 }
 
@@ -193,19 +251,19 @@ void save_snapshot(AppState &app)
 // Small UI helpers: a two-column "label | widget" property grid
 // ---------------------------------------------------------------------------
 
-bool begin_properties(const char *id)
+bool BeginProperties(const char *id)
 {
     if (!ImGui::BeginTable(id, 2, ImGuiTableFlags_SizingStretchProp))
     {
         return false;
     }
-    ImGui::TableSetupColumn("label", ImGuiTableColumnFlags_WidthFixed, 110.0f * ImGui::GetStyle().FontScaleDpi);
+    ImGui::TableSetupColumn("label", ImGuiTableColumnFlags_WidthFixed, umbra::ui::Px(110.0f));
     ImGui::TableSetupColumn("value", ImGuiTableColumnFlags_WidthStretch);
     return true;
 }
 
 /// Starts a row: writes the label, then leaves the cursor in the value column.
-void property(const char *label)
+void Property(const char *label)
 {
     ImGui::TableNextRow();
     ImGui::TableSetColumnIndex(0);
@@ -215,9 +273,9 @@ void property(const char *label)
     ImGui::SetNextItemWidth(-FLT_MIN);
 }
 
-void property_text(const char *label, const std::string &value)
+void PropertyText(const char *label, const std::string &value)
 {
-    property(label);
+    Property(label);
     ImGui::AlignTextToFramePadding();
     ImGui::TextUnformatted(value.c_str());
 }
@@ -226,23 +284,39 @@ void property_text(const char *label, const std::string &value)
 // UI pieces
 // ---------------------------------------------------------------------------
 
-void handle_shortcuts(AppState &app)
+void HandleShortcuts(AppState &app)
 {
     if (ImGui::Shortcut(ImGuiKey_F5, ImGuiInputFlags_RouteGlobal))
     {
-        restart_render(app);
+        RestartRender(app);
     }
     if (ImGui::Shortcut(ImGuiMod_Ctrl | ImGuiKey_S, ImGuiInputFlags_RouteGlobal))
     {
-        save_snapshot(app);
+        SaveSnapshot(app);
     }
     if (ImGui::Shortcut(ImGuiMod_Ctrl | ImGuiKey_Q, ImGuiInputFlags_RouteGlobal))
     {
         app.quit = true;
     }
+
+    // UI scale: Ctrl + numpad +/- (or the "=" / "-" keys of a US layout), Ctrl + numpad 0 = automatic.
+    if (ImGui::Shortcut(ImGuiMod_Ctrl | ImGuiKey_KeypadAdd, ImGuiInputFlags_RouteGlobal) ||
+        ImGui::Shortcut(ImGuiMod_Ctrl | ImGuiKey_Equal, ImGuiInputFlags_RouteGlobal))
+    {
+        SetUiScale(app, EffectiveUiScale(app) + ui_scale_step);
+    }
+    if (ImGui::Shortcut(ImGuiMod_Ctrl | ImGuiKey_KeypadSubtract, ImGuiInputFlags_RouteGlobal) ||
+        ImGui::Shortcut(ImGuiMod_Ctrl | ImGuiKey_Minus, ImGuiInputFlags_RouteGlobal))
+    {
+        SetUiScale(app, EffectiveUiScale(app) - ui_scale_step);
+    }
+    if (ImGui::Shortcut(ImGuiMod_Ctrl | ImGuiKey_Keypad0, ImGuiInputFlags_RouteGlobal))
+    {
+        SetUiScale(app, std::nullopt);
+    }
 }
 
-void draw_main_menu(AppState &app)
+void DrawMainMenu(AppState &app)
 {
     if (!ImGui::BeginMainMenuBar())
     {
@@ -252,7 +326,7 @@ void draw_main_menu(AppState &app)
     {
         if (ImGui::MenuItem("Save PNG", "Ctrl+S"))
         {
-            save_snapshot(app);
+            SaveSnapshot(app);
         }
         ImGui::Separator();
         if (ImGui::MenuItem("Quit", "Ctrl+Q"))
@@ -265,13 +339,38 @@ void draw_main_menu(AppState &app)
     {
         if (ImGui::MenuItem("Re-render", "F5"))
         {
-            restart_render(app);
+            RestartRender(app);
         }
         ImGui::MenuItem("Slow motion", nullptr, &app.slow_motion);
         ImGui::EndMenu();
     }
     if (ImGui::BeginMenu("View"))
     {
+        // "###UiScale" keeps the menu's ID stable while the number in its label changes.
+        const std::string scale_menu = std::format("UI scale ({:.0f}%)###UiScale", EffectiveUiScale(app) * 100.0f);
+        if (ImGui::BeginMenu(scale_menu.c_str()))
+        {
+            const std::string automatic = std::format("Automatic ({:.0f}%)", umbra::ui::SystemScale() * 100.0f);
+            if (ImGui::MenuItem(automatic.c_str(), "Ctrl+Num 0", !app.settings.ui_scale.has_value()))
+            {
+                SetUiScale(app, std::nullopt);
+            }
+            ImGui::SetItemTooltip("Follow the system: Xft.dpi on Linux and WSLg (96 dpi = 100%%),\n"
+                                  "the display settings on Windows.");
+            ImGui::Separator();
+            for (const float preset : ui_scale_presets)
+            {
+                const std::string label = std::format("{:.0f}%", preset * 100.0f);
+                const bool current = std::abs(EffectiveUiScale(app) - preset) < 0.01f;
+                if (ImGui::MenuItem(label.c_str(), nullptr, current))
+                {
+                    SetUiScale(app, preset);
+                }
+            }
+            ImGui::Separator();
+            ImGui::TextDisabled("Ctrl + numpad +/-");
+            ImGui::EndMenu();
+        }
         if (ImGui::MenuItem("Reset layout"))
         {
             app.reset_layout = true;
@@ -290,7 +389,7 @@ void draw_main_menu(AppState &app)
     ImGui::EndMainMenuBar();
 }
 
-void draw_status_bar(const AppState &app)
+void DrawStatusBar(const AppState &app)
 {
     ImGuiViewport *viewport = ImGui::GetMainViewport();
     constexpr ImGuiWindowFlags flags =
@@ -300,9 +399,9 @@ void draw_status_bar(const AppState &app)
     {
         if (ImGui::BeginMenuBar())
         {
-            if (is_rendering(app))
+            if (IsRendering(app))
             {
-                ImGui::Text(ICON_FA_SPINNER "  Rendering... %d%%", static_cast<int>(render_progress(app) * 100.0f));
+                ImGui::Text(ICON_FA_SPINNER "  Rendering... %d%%", static_cast<int>(RenderProgress(app) * 100.0f));
             }
             else
             {
@@ -310,7 +409,7 @@ void draw_status_bar(const AppState &app)
             }
 
             const std::string right = std::format("{}   |   {} x {}   |   {} FPS", umbra::milestone,
-                                                  app.framebuffer.width(), app.framebuffer.height(), GetFPS());
+                                                  app.framebuffer.Width(), app.framebuffer.Height(), GetFPS());
             const float right_width = ImGui::CalcTextSize(right.c_str()).x;
             ImGui::SameLine(ImGui::GetWindowWidth() - right_width - 2.0f * ImGui::GetStyle().WindowPadding.x);
             ImGui::TextDisabled("%s", right.c_str());
@@ -321,7 +420,7 @@ void draw_status_bar(const AppState &app)
 }
 
 /// The docking area between the menu and the status bar, with a default layout.
-void draw_dockspace(AppState &app)
+void DrawDockspace(AppState &app)
 {
     ImGuiViewport *viewport = ImGui::GetMainViewport();
     const ImGuiID dockspace_id = ImGui::GetID("MainDockSpace");
@@ -333,9 +432,11 @@ void draw_dockspace(AppState &app)
         ImGui::DockBuilderAddNode(dockspace_id, ImGuiDockNodeFlags_DockSpace);
         ImGui::DockBuilderSetNodeSize(dockspace_id, viewport->WorkSize);
 
+        // The side panel gets about 400 (scaled) pixels, but never less than 20% or more than half.
+        const float side_ratio = std::clamp(umbra::ui::Px(400.0f) / viewport->WorkSize.x, 0.2f, 0.5f);
         ImGuiID right_id{0};
         ImGuiID left_id{0};
-        ImGui::DockBuilderSplitNode(dockspace_id, ImGuiDir_Right, 0.24f, &right_id, &left_id);
+        ImGui::DockBuilderSplitNode(dockspace_id, ImGuiDir_Right, side_ratio, &right_id, &left_id);
         ImGui::DockBuilderDockWindow("###Viewport", left_id);
         ImGui::DockBuilderDockWindow("###Render", right_id);
         ImGui::DockBuilderFinish(dockspace_id);
@@ -345,7 +446,7 @@ void draw_dockspace(AppState &app)
     ImGui::DockSpaceOverViewport(dockspace_id, viewport);
 }
 
-void draw_viewport(const AppState &app)
+void DrawViewport(const AppState &app)
 {
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2{0.0f, 0.0f});
     const bool visible =
@@ -354,8 +455,8 @@ void draw_viewport(const AppState &app)
 
     const ImVec2 origin = ImGui::GetCursorScreenPos();
     const ImVec2 available = ImGui::GetContentRegionAvail();
-    const auto image_width = static_cast<float>(app.framebuffer.width());
-    const auto image_height = static_cast<float>(app.framebuffer.height());
+    const auto image_width = static_cast<float>(app.framebuffer.Width());
+    const auto image_height = static_cast<float>(app.framebuffer.Height());
 
     if (visible && available.x > 1.0f && available.y > 1.0f && image_width > 0.0f)
     {
@@ -363,8 +464,10 @@ void draw_viewport(const AppState &app)
         draw_list->AddRectFilled(origin, ImVec2{origin.x + available.x, origin.y + available.y},
                                  umbra::ui::viewport_background);
 
+        using umbra::ui::Px;
+
         // Fit the image into the panel (with a margin), keep the aspect ratio, center it.
-        constexpr float margin{24.0f};
+        const float margin = Px(24.0f);
         const float zoom = std::max(
             0.01f, std::min((available.x - 2.0f * margin) / image_width, (available.y - 2.0f * margin) / image_height));
         const ImVec2 size{std::floor(image_width * zoom), std::floor(image_height * zoom)};
@@ -374,9 +477,9 @@ void draw_viewport(const AppState &app)
         // A soft shadow and a thin outline make the image "sit" on the background.
         for (int layer{1}; layer <= 6; ++layer)
         {
-            const float spread = 3.0f * static_cast<float>(layer);
-            draw_list->AddRectFilled(ImVec2{position.x - spread, position.y - spread + 4.0f},
-                                     ImVec2{position.x + size.x + spread, position.y + size.y + spread + 4.0f},
+            const float spread = Px(3.0f) * static_cast<float>(layer);
+            draw_list->AddRectFilled(ImVec2{position.x - spread, position.y - spread + Px(4.0f)},
+                                     ImVec2{position.x + size.x + spread, position.y + size.y + spread + Px(4.0f)},
                                      umbra::ui::image_shadow_layer, spread);
         }
         ImGui::SetCursorScreenPos(position);
@@ -385,26 +488,27 @@ void draw_viewport(const AppState &app)
                            ImVec2{position.x + size.x + 1.0f, position.y + size.y + 1.0f}, umbra::ui::image_outline);
 
         // A thin progress line along the bottom edge of the image.
-        if (is_rendering(app))
+        if (IsRendering(app))
         {
             const float bottom = position.y + size.y;
-            draw_list->AddRectFilled(ImVec2{position.x, bottom - 3.0f},
-                                     ImVec2{position.x + size.x * render_progress(app), bottom}, umbra::ui::accent);
+            draw_list->AddRectFilled(ImVec2{position.x, bottom - Px(3.0f)},
+                                     ImVec2{position.x + size.x * RenderProgress(app), bottom}, umbra::ui::accent);
         }
 
-        // Small overlay in the top-left corner, like in 3D apps.
+        // Small overlay in the top-left corner, like in 3D apps: image size, and how much
+        // the image is magnified to fit the panel.
         const std::string hud =
-            std::format("{} x {}  ·  {:.0f}%", app.framebuffer.width(), app.framebuffer.height(), zoom * 100.0f);
+            std::format("{} x {}  ·  zoom {:.0f}%", app.framebuffer.Width(), app.framebuffer.Height(), zoom * 100.0f);
         const ImVec2 text_size = ImGui::CalcTextSize(hud.c_str());
-        const ImVec2 hud_min{origin.x + 10.0f, origin.y + 10.0f};
-        const ImVec2 hud_max{hud_min.x + text_size.x + 16.0f, hud_min.y + text_size.y + 8.0f};
-        draw_list->AddRectFilled(hud_min, hud_max, umbra::ui::hud_background, 4.0f);
-        draw_list->AddText(ImVec2{hud_min.x + 8.0f, hud_min.y + 4.0f}, umbra::ui::hud_text, hud.c_str());
+        const ImVec2 hud_min{origin.x + Px(10.0f), origin.y + Px(10.0f)};
+        const ImVec2 hud_max{hud_min.x + text_size.x + Px(16.0f), hud_min.y + text_size.y + Px(8.0f)};
+        draw_list->AddRectFilled(hud_min, hud_max, umbra::ui::hud_background, Px(4.0f));
+        draw_list->AddText(ImVec2{hud_min.x + Px(8.0f), hud_min.y + Px(4.0f)}, umbra::ui::hud_text, hud.c_str());
     }
     ImGui::End();
 }
 
-void draw_render_panel(AppState &app)
+void DrawRenderPanel(AppState &app)
 {
     if (!ImGui::Begin(render_window_title))
     {
@@ -413,9 +517,9 @@ void draw_render_panel(AppState &app)
     }
 
     ImGui::SeparatorText("Output");
-    if (begin_properties("##output"))
+    if (BeginProperties("##output"))
     {
-        property("Resolution");
+        Property("Resolution");
         if (ImGui::BeginCombo("##resolution", resolutions[app.resolution_index].label))
         {
             for (std::size_t i{0}; i < resolutions.size(); ++i)
@@ -424,13 +528,13 @@ void draw_render_panel(AppState &app)
                 if (ImGui::Selectable(resolutions[i].label, selected) && !selected)
                 {
                     app.resolution_index = i;
-                    restart_render(app);
+                    RestartRender(app);
                 }
             }
             ImGui::EndCombo();
         }
 
-        property("Slow motion");
+        Property("Slow motion");
         ImGui::Checkbox("1 row per frame", &app.slow_motion);
         ImGui::SetItemTooltip("Watch the image being drawn row by row.");
         ImGui::EndTable();
@@ -440,43 +544,43 @@ void draw_render_panel(AppState &app)
     const float button_width = (ImGui::GetContentRegionAvail().x - ImGui::GetStyle().ItemSpacing.x) * 0.5f;
     if (ImGui::Button(ICON_FA_ROTATE_RIGHT "  Re-render", ImVec2{button_width, 0.0f}))
     {
-        restart_render(app);
+        RestartRender(app);
     }
     ImGui::SetItemTooltip("F5");
     ImGui::SameLine();
     if (ImGui::Button(ICON_FA_FLOPPY_DISK "  Save PNG", ImVec2{button_width, 0.0f}))
     {
-        save_snapshot(app);
+        SaveSnapshot(app);
     }
     ImGui::SetItemTooltip("Ctrl+S  -  saved into ./renders/");
 
     ImGui::SeparatorText("Progress");
-    const float progress = render_progress(app);
-    const std::string progress_label = is_rendering(app) ? std::format("{:.0f}%", progress * 100.0f) : "Done";
+    const float progress = RenderProgress(app);
+    const std::string progress_label = IsRendering(app) ? std::format("{:.0f}%", progress * 100.0f) : "Done";
     ImGui::ProgressBar(progress, ImVec2{-FLT_MIN, 0.0f}, progress_label.c_str());
 
-    if (begin_properties("##progress"))
+    if (BeginProperties("##progress"))
     {
         const double seconds = app.compute_time.count();
-        const double pixels = static_cast<double>(app.next_row) * app.framebuffer.width();
-        property_text("Rows", std::format("{} / {}", app.next_row, app.framebuffer.height()));
-        property_text("Render time", std::format("{:.3f} s", seconds));
-        property_text("Speed", seconds > 0.0 ? std::format("{:.1f} Mpixel/s", pixels / seconds / 1e6) : "-");
+        const double pixels = static_cast<double>(app.next_row) * app.framebuffer.Width();
+        PropertyText("Rows", std::format("{} / {}", app.next_row, app.framebuffer.Height()));
+        PropertyText("Render time", std::format("{:.3f} s", seconds));
+        PropertyText("Speed", seconds > 0.0 ? std::format("{:.1f} Mpixel/s", pixels / seconds / 1e6) : "-");
         ImGui::EndTable();
     }
 
     ImGui::SeparatorText("Renderer");
-    if (begin_properties("##renderer"))
+    if (BeginProperties("##renderer"))
     {
-        property_text("Backend", "CPU, 1 thread");
-        property_text("Milestone", std::string{umbra::milestone});
+        PropertyText("Backend", "CPU, 1 thread");
+        PropertyText("Milestone", std::string{umbra::milestone});
         ImGui::EndTable();
     }
 
     ImGui::End();
 }
 
-void draw_about(AppState &app)
+void DrawAbout(AppState &app)
 {
     if (app.open_about)
     {
@@ -492,7 +596,7 @@ void draw_about(AppState &app)
         ImGui::Separator();
         ImGui::TextDisabled("raylib %s   |   Dear ImGui %s", RAYLIB_VERSION, IMGUI_VERSION);
         ImGui::Spacing();
-        if (ImGui::Button("Close", ImVec2{120.0f, 0.0f}) || ImGui::IsKeyPressed(ImGuiKey_Escape))
+        if (ImGui::Button("Close", ImVec2{umbra::ui::Px(120.0f), 0.0f}) || ImGui::IsKeyPressed(ImGuiKey_Escape))
         {
             ImGui::CloseCurrentPopup();
         }
@@ -501,7 +605,7 @@ void draw_about(AppState &app)
 }
 
 /// Saves what is currently on screen (call it after the UI is drawn, before EndDrawing).
-void save_window_screenshot(const std::filesystem::path &path)
+void SaveWindowScreenshot(const std::filesystem::path &path)
 {
     if (path.has_parent_path())
     {
@@ -512,13 +616,14 @@ void save_window_screenshot(const std::filesystem::path &path)
     UnloadImage(screen);
 }
 
-std::optional<std::filesystem::path> screenshot_argument(const int argc, char **argv)
+/// The value after a command-line option, e.g. "a.png" for "--screenshot a.png".
+std::optional<std::string_view> OptionValue(const int argc, char **argv, const std::string_view option)
 {
     for (int i{1}; i + 1 < argc; ++i)
     {
-        if (std::string_view{argv[i]} == "--screenshot")
+        if (argv[i] == option)
         {
-            return std::filesystem::path{argv[i + 1]};
+            return std::string_view{argv[i + 1]};
         }
     }
     return std::nullopt;
@@ -528,7 +633,12 @@ std::optional<std::filesystem::path> screenshot_argument(const int argc, char **
 
 int main(int argc, char **argv)
 {
-    const auto screenshot_path = screenshot_argument(argc, argv);
+    std::optional<std::filesystem::path> screenshot_path;
+    if (const auto value = OptionValue(argc, argv, "--screenshot"))
+    {
+        screenshot_path = std::filesystem::path{*value};
+    }
+    const auto ui_scale_argument = OptionValue(argc, argv, "--ui-scale");
 
     SetTraceLogLevel(LOG_WARNING);
     SetConfigFlags(FLAG_WINDOW_RESIZABLE | FLAG_VSYNC_HINT);
@@ -543,37 +653,67 @@ int main(int argc, char **argv)
 
     umbra::ui::InstallFontLoader();
     rlImGuiSetup(true);
-    umbra::ui::ApplyTheme();
 
     ImGuiIO &io = ImGui::GetIO();
     io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
     io.ConfigWindowsMoveFromTitleBarOnly = true;
 
-    // Remember the panel layout in imgui.ini next to the executable (not in the
-    // current directory). Screenshot mode always starts from the default layout.
-    const std::string ini_path = (std::filesystem::path{GetApplicationDirectory()} / "imgui.ini").string();
-    io.IniFilename = screenshot_path ? nullptr : ini_path.c_str();
-
     AppState app{};
-    restart_render(app);
+
+    // Settings and panel layout live in the config directory (e.g. ~/.config/umbra).
+    // Screenshot mode uses neither, so it always starts from the defaults.
+    std::string layout_path;
+    if (!screenshot_path)
+    {
+        const std::filesystem::path config_directory = umbra::app::ConfigDirectory();
+        std::error_code error;
+        std::filesystem::create_directories(config_directory, error); // ImGui needs it to save the layout
+        app.settings_path = config_directory / "settings.ini";
+        app.settings = umbra::app::LoadSettings(app.settings_path);
+        layout_path = (config_directory / "layout.ini").string();
+    }
+    io.IniFilename = layout_path.empty() ? nullptr : layout_path.c_str();
+
+    // --ui-scale only applies to this run; it is saved only if you change the scale in the app.
+    if (ui_scale_argument)
+    {
+        if (const auto scale = umbra::app::ParseUiScale(*ui_scale_argument))
+        {
+            app.settings.ui_scale = *scale;
+        }
+        else
+        {
+            TraceLog(LOG_WARNING, "--ui-scale: %s", scale.error().c_str());
+        }
+    }
+
+    RestartRender(app);
 
     int finished_frames{0};
     while (!WindowShouldClose() && !app.quit)
     {
-        advance_render(app);
-        upload_texture(app);
+        // (Re)build the theme when the UI scale changes: a new setting, or (in automatic
+        // mode) the window moved to a monitor with a different scale.
+        if (const float scale = EffectiveUiScale(app); scale != app.applied_ui_scale)
+        {
+            umbra::ui::ApplyTheme(scale);
+            app.applied_ui_scale = scale;
+        }
+
+        AdvanceRender(app);
+        UploadTexture(app);
 
         BeginDrawing();
         ClearBackground(umbra::ui::clear_color);
 
         rlImGuiBegin();
-        handle_shortcuts(app);
-        draw_main_menu(app);
-        draw_status_bar(app);
-        draw_dockspace(app);
-        draw_viewport(app);
-        draw_render_panel(app);
-        draw_about(app);
+        HandleShortcuts(app);
+        DrawMainMenu(app);
+        DrawStatusBar(app);
+        DrawDockspace(app);
+        DrawViewport(app);
+        DrawRenderPanel(app);
+        DrawAbout(app);
         if (app.show_imgui_demo)
         {
             ImGui::ShowDemoWindow(&app.show_imgui_demo);
@@ -581,9 +721,9 @@ int main(int argc, char **argv)
         rlImGuiEnd();
 
         // Give the layout a few frames to settle after the render has finished.
-        if (screenshot_path && !is_rendering(app) && ++finished_frames == 10)
+        if (screenshot_path && !IsRendering(app) && ++finished_frames == 10)
         {
-            save_window_screenshot(*screenshot_path);
+            SaveWindowScreenshot(*screenshot_path);
             app.quit = true;
         }
 

@@ -70,11 +70,12 @@ Steps:
 1. [ ] **Gradient.** In `RenderPixel`: red = x / (width − 1), green = y / (height − 1), blue = 0
    (this is the RTiOW chapter 2 image). It is a trivial change, and it gets you started.
 2. [ ] **Colors as floats.** Let the rendering math work with colors in [0, 1] and convert to `Pixel`
-   in exactly one place (`to_pixel(color)`, with clamping). Every later milestone depends on this.
-3. [ ] **`vec3`** (RTiOW 3). Write your own. Make it a plain value type: `constexpr` everywhere,
-   arithmetic operators (as hidden friends), `dot`, `cross`, `length`, `unit_vector`.
+   in exactly one place (`ToPixel(color)`, with clamping). Every later milestone depends on this.
+3. [ ] **`Vec3`** (RTiOW 3). Write your own. Make it a plain value type: `constexpr` everywhere,
+   arithmetic operators (as hidden friends), `Dot`, `Cross`, `Length`, `UnitVector`.
+   (The book writes `vec3`, `unit_vector`; here types and functions are `CamelCase`, see `.clang-tidy`.)
    Add a few `static_assert`s. They are unit tests that run inside the compiler.
-4. [ ] **`ray`** with `origin`, `direction`, `at(t)`.
+4. [ ] **`Ray`** with `origin`, `direction`, `At(t)`.
 5. [ ] **Camera basics + sky** (RTiOW 4): viewport, `pixel_delta_u/v`, one ray per pixel,
    lerp from white to light blue by the ray's y direction.
    (Recomputing the camera for every pixel is wasteful. That is fine for now, and M3 fixes it.)
@@ -87,10 +88,10 @@ Steps:
 - [ ] Experiment: make it copyable with `= default` and resize the image a few times. Watch what happens
   (double unload). Then undo it.
 
-**C++ angle:** value types and the *rule of zero* (`vec3`, `Framebuffer`) versus resource owners and the
+**C++ angle:** value types and the *rule of zero* (`Vec3`, `Framebuffer`) versus resource owners and the
 *rule of five* (`Texture`); `constexpr` + `static_assert`.
 
-**Interview story:** "Explain the rule of 0/3/5." Answer with your own code: "`vec3` and the framebuffer
+**Interview story:** "Explain the rule of 0/3/5." Answer with your own code: "`Vec3` and the framebuffer
 need no special members. The texture wrapper is move-only because two copies would release the same
 GPU handle twice. I tried it, and this is what happened."
 
@@ -110,13 +111,13 @@ Steps:
    image is a flat red disc, and that is the moment it becomes 3D.
 2. [ ] Return the hit distance `t`; color by the normal (`0.5 * (n + 1)`).
 3. [ ] Simplify the quadratic (the `h = b / 2` trick).
-4. [ ] `hit_record`, something "hittable", a sphere, a list of objects, an `interval`.
+4. [ ] `HitRecord`, something "hittable", a sphere, a list of objects, an `Interval`.
 5. [ ] **First unit tests.** Add doctest (or Catch2) via FetchContent and test ray–sphere: hit, miss,
    tangent, ray starting inside. Compare floats with a tolerance.
 
 **A design choice to make (and write down in the devlog):** RTiOW uses `virtual` + `shared_ptr`.
 Alternatives:
-- Return `std::optional<hit_record>` instead of `bool` + an out parameter.
+- Return `std::optional<HitRecord>` instead of `bool` + an out parameter.
 - Store objects by value (`std::vector<sphere>`) instead of a list of pointers.
 - `std::variant<sphere, ...>` + `std::visit` instead of virtual functions.
 
@@ -141,7 +142,7 @@ Steps:
 
 1. [ ] **Camera class** (RTiOW 7): precompute the viewport once and keep scene + camera out of
    globals. This replaces the bare `RenderPixel` function with your own design
-   (e.g. `camera.sample(x, y, rng)`).
+   (e.g. `camera.Sample(x, y, rng)`).
 2. [ ] **Random numbers** with `<random>`: one engine, passed explicitly (it becomes per-thread in M8).
    Why not `rand()`?
 3. [ ] **Antialiasing** (RTiOW 8): jitter the ray inside the pixel and average the samples.
@@ -166,7 +167,7 @@ Steps:
 
 1. [ ] **Diffuse bounce** with a depth limit. Write it as a loop, not recursion, because the GPU (M9)
    will thank you. Fix "shadow acne" (start the hit interval at 0.001).
-2. [ ] **Lambertian** reflection; **gamma correction** in `to_pixel`.
+2. [ ] **Lambertian** reflection; **gamma correction** in `ToPixel`.
 3. [ ] **Materials**: a material type + metal with fuzz.
 4. [ ] **Glass**: refraction (Snell), total internal reflection, Schlick's approximation; the hollow
    glass sphere trick.

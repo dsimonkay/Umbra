@@ -22,6 +22,7 @@ ctest --preset release            # tests
 ./build/release/umbra             # the GUI
 ./build/release/umbra-cli --out renders/cli.png [--width N --height N]
 ./build/release/umbra --screenshot renders/ui.png   # whole window -> PNG, then quits
+./build/release/umbra --ui-scale 1.5                # UI scale for this run: 1.5, 150% or auto (works with --screenshot)
 ```
 
 There is also a `debug` preset (asserts on). Build directories are `build/<preset>/`.
@@ -38,7 +39,10 @@ There is also a `debug` preset (asserts on). Build directories are `build/<prese
 - `src/io/`: framebuffer to PNG (raylib's image export; no window needed).
 - `src/app/`: the GUI. raylib window + Dear ImGui docking via rlImGui. `main.cpp` has the app state, the
   progressive row scheduler (12 ms budget per frame, UI thread) and the panels; `theme.cpp` has the
-  colors and fonts.
+  colors, fonts and UI scaling; `settings.cpp` reads/writes `~/.config/umbra/settings.ini` (the panel
+  layout is `layout.ini` next to it; screenshot mode uses neither). The UI scale is either the system's
+  (`ui::SystemScale()`: Xft.dpi on Linux/WSLg, display settings on Windows) or a fixed value from
+  *View ▸ UI scale*. Hard-coded pixel sizes in the UI go through `ui::Px()` so they follow it.
 - `src/cli/`: the headless renderer.
 - Dependencies are pinned in `cmake/Dependencies.cmake`. **Ask before adding a new dependency.**
 

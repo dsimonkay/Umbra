@@ -30,6 +30,28 @@ On WSL the window appears on the Windows desktop through WSLg (Windows 11, or Wi
 up-to-date WSL). Keep the repository inside the Linux file system (e.g. `~/projects/umbra`) rather
 than under `/mnt/c`. Builds are much faster there.
 
+### High-DPI screens
+
+By default (*View ▸ UI scale ▸ Automatic*) Umbra uses the UI scale the system asks for:
+
+- **Windows:** the *Make everything bigger* display setting.
+- **Linux:** the X11 resource `Xft.dpi` (96 = 100 %, 120 = 125 %, 144 = 150 %, 192 = 200 %).
+  Desktop environments (GNOME, KDE, ...) set it from their own scaling setting.
+- **WSLg:** nothing sets `Xft.dpi`, so it counts as 100 %, and on a high-DPI screen the UI looks
+  small. Either set it yourself, e.g. in `~/.bashrc` (needs `sudo apt install x11-xserver-utils`):
+
+  ```bash
+  [ -n "$DISPLAY" ] && command -v xrdb > /dev/null && echo "Xft.dpi: 144" | xrdb -nocpp -merge
+  ```
+
+  (other Linux GUI apps pick it up too), or choose a fixed size under *View ▸ UI scale*.
+
+A fixed size replaces the automatic one; it does not multiply it. The choice is saved in
+`~/.config/umbra/settings.ini` (on Windows: `%APPDATA%\Umbra\settings.ini`), next to the panel
+layout (`layout.ini`).
+
+### Compiler
+
 For a different compiler, set it on the first configure: `CXX=g++-14 cmake --preset release`
 (delete `build/` when you switch compilers).
 
@@ -53,6 +75,7 @@ cmake --build --preset release
 | **Ctrl+S** | save the image to `./renders/` |
 | **Ctrl+Q** | quit |
 | *Render ▸ Slow motion* | one row per frame, so you can watch it draw |
+| *View ▸ UI scale* | *Automatic* (follow the system) or a fixed size, remembered; also **Ctrl + numpad +/−**, **Ctrl + numpad 0** = automatic |
 | *View ▸ Reset layout* | put the panels back where they were |
 | *View ▸ ImGui demo window* | every ImGui widget, with source, handy for new panels |
 
@@ -61,6 +84,7 @@ Command line:
 ```bash
 ./build/release/umbra-cli --width 1280 --height 720 --out renders/test.png   # no window
 ./build/release/umbra --screenshot renders/ui.png                           # picture of the GUI
+./build/release/umbra --ui-scale 1.5                                        # UI scale for this run (also 150%, auto)
 ctest --preset release                                                      # tests
 ```
 

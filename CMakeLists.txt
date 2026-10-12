@@ -49,10 +49,14 @@ target_link_libraries(umbra_io
 # ---------------------------------------------------------------------------
 add_executable(umbra
     src/app/main.cpp
+    src/app/settings.cpp
     src/app/theme.cpp
 )
 target_link_libraries(umbra PRIVATE umbra_core umbra_io rlimgui umbra_warnings)
 target_compile_definitions(umbra PRIVATE UMBRA_VERSION="${PROJECT_VERSION}")
+# theme.cpp asks GLFW (the window library inside raylib) for the monitor's DPI scale.
+# raylib already links GLFW; we only need its header.
+target_include_directories(umbra SYSTEM PRIVATE "${raylib_SOURCE_DIR}/src/external/glfw/include")
 
 # The UI font lives next to the executable (assets/), see theme.cpp.
 add_custom_command(TARGET umbra POST_BUILD

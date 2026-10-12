@@ -20,8 +20,26 @@ inline constexpr ImU32 hud_text = IM_COL32(220, 220, 225, 255);
 ///        the default one. Call it before rlImGuiSetup().
 void InstallFontLoader();
 
-/// @brief The "pro grey" look: colors, roundings, spacing. Call it after rlImGuiSetup().
-void ApplyTheme();
+/// @brief The "pro grey" look: colors, roundings, spacing, font size.
+/// @param scale the UI scale to build it for (1.0 = 100 %, 1.5 = 150 %).
+/// @note Call it after rlImGuiSetup(), and again (between frames) whenever the UI scale changes.
+void ApplyTheme(float scale);
+
+/// @brief The UI scale the system asks for (1.0 on a "normal" monitor).
+/// @note On Windows this is the "Make everything bigger" setting of the window's monitor.
+///       On Linux/X11 (and so under WSLg) it comes from the Xft.dpi X resource: 96 dpi = 1.0.
+///       Desktop environments set Xft.dpi from their own scaling setting; WSLg does not, so
+///       there it is 1.0 unless you set Xft.dpi yourself (see the README).
+[[nodiscard]] float SystemScale();
+
+/// @brief The UI scale the theme was last built for (see ApplyTheme()).
+[[nodiscard]] float UiScale();
+
+/// @brief Scale a hard-coded pixel size (margins, offsets, line widths) by the UI scale.
+[[nodiscard]] inline float Px(const float pixels)
+{
+    return pixels * UiScale();
+}
 
 } // namespace umbra::ui
 

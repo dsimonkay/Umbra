@@ -34,7 +34,7 @@ struct Options
 
 constexpr std::string_view usage{"usage: umbra-cli [--width N] [--height N] [--out path.png]\n"};
 
-std::optional<int> parse_positive_int(const std::string_view text)
+std::optional<int> ParsePositiveInt(const std::string_view text)
 {
     int value{0};
     const auto [end, error] = std::from_chars(text.data(), text.data() + text.size(), value);
@@ -47,7 +47,7 @@ std::optional<int> parse_positive_int(const std::string_view text)
 
 /// @return the parsed options, or the exit code to quit with
 ///         (EXIT_SUCCESS after --help, EXIT_FAILURE after an error).
-std::expected<Options, int> parse_options(const std::vector<std::string_view> &args)
+std::expected<Options, int> ParseOptions(const std::vector<std::string_view> &args)
 {
     Options options{};
     for (std::size_t i{0}; i < args.size(); ++i)
@@ -76,7 +76,7 @@ std::expected<Options, int> parse_options(const std::vector<std::string_view> &a
             continue;
         }
 
-        const auto number = parse_positive_int(value);
+        const auto number = ParsePositiveInt(value);
         if (!number)
         {
             std::cerr << "error: '" << value << "' is not a positive integer\n";
@@ -98,7 +98,7 @@ std::expected<Options, int> parse_options(const std::vector<std::string_view> &a
 
 int main(int argc, char **argv)
 {
-    const auto options = parse_options(std::vector<std::string_view>(argv + 1, argv + argc));
+    const auto options = ParseOptions(std::vector<std::string_view>(argv + 1, argv + argc));
     if (!options)
     {
         return options.error();
@@ -109,11 +109,11 @@ int main(int argc, char **argv)
     umbra::Framebuffer framebuffer{options->width, options->height};
 
     const auto start = std::chrono::steady_clock::now();
-    for (int y{0}; y < framebuffer.height(); ++y)
+    for (int y{0}; y < framebuffer.Height(); ++y)
     {
-        for (int x{0}; x < framebuffer.width(); ++x)
+        for (int x{0}; x < framebuffer.Width(); ++x)
         {
-            framebuffer.put_pixel(x, y, umbra::RenderPixel(x, y, framebuffer.width(), framebuffer.height()));
+            framebuffer.PutPixel(x, y, umbra::RenderPixel(x, y, framebuffer.Width(), framebuffer.Height()));
         }
     }
     const std::chrono::duration<double> elapsed = std::chrono::steady_clock::now() - start;
@@ -124,7 +124,7 @@ int main(int argc, char **argv)
         return EXIT_FAILURE;
     }
 
-    std::cout << "rendered " << framebuffer.width() << "x" << framebuffer.height() << " in " << elapsed.count()
+    std::cout << "rendered " << framebuffer.Width() << "x" << framebuffer.Height() << " in " << elapsed.count()
               << " s -> " << options->output.string() << '\n';
     return EXIT_SUCCESS;
 }

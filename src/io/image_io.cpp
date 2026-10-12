@@ -11,7 +11,7 @@ namespace umbra
 
 std::expected<void, std::string> WritePng(const Framebuffer &framebuffer, const std::filesystem::path &path)
 {
-    if (framebuffer.width() == 0 || framebuffer.height() == 0)
+    if (framebuffer.Width() == 0 || framebuffer.Height() == 0)
     {
         return std::unexpected{std::string{"the framebuffer is empty"}};
     }
@@ -29,9 +29,9 @@ std::expected<void, std::string> WritePng(const Framebuffer &framebuffer, const 
     // raylib's Image is a plain C struct that does not own anything here:
     // it just points at our pixels for the duration of the call.
     const Image image{
-        .data = const_cast<Pixel *>(framebuffer.data()), // ExportImage only reads it
-        .width = framebuffer.width(),
-        .height = framebuffer.height(),
+        .data = const_cast<Pixel *>(framebuffer.Data()), // ExportImage only reads it
+        .width = framebuffer.Width(),
+        .height = framebuffer.Height(),
         .mipmaps = 1,
         .format = PIXELFORMAT_UNCOMPRESSED_R8G8B8A8,
     };
