@@ -50,13 +50,15 @@ What is there:
 - `umbra-cli`: renders to a PNG without opening a window.
 - `umbra --screenshot file.png`: renders, saves a picture of the whole window, quits.
 - `umbra::RenderPixel(x, y, width, height)` in `src/core/render.cpp` is the function the app calls for
-  every pixel. At the moment it draws a checkerboard.
+  every pixel. In M0 it drew a checkerboard.
+- Added on 2026-10-12: the UI scale follows the system or *View ▸ UI scale*; the settings and the panel
+  layout are saved in `~/.config/umbra/`.
 
 Your first session (≈ 30–60 minutes):
 
-- [ ] Build and run it in WSL (see README). Resize the panels, toggle *Slow motion*, press F5.
-- [ ] Read `src/core/render.cpp` and skim `src/app/main.cpp`. You don't need to understand all of it.
-- [ ] `git init`, first commit, push to a private GitHub repo.
+- [x] Build and run it in WSL (see README). Resize the panels, toggle *Slow motion*, press F5.
+- [x] Read `src/core/render.cpp` and skim `src/app/main.cpp`. You don't need to understand all of it.
+- [x] `git init`, first commit, push to a private GitHub repo.
 
 ---
 
@@ -67,14 +69,21 @@ colors come from the ray directions.
 
 Steps:
 
-1. [ ] **Gradient.** In `RenderPixel`: red = x / (width − 1), green = y / (height − 1), blue = 0
+1. [x] **Gradient.** In `RenderPixel`: red = x / (width − 1), green = y / (height − 1), blue = 0
    (this is the RTiOW chapter 2 image). It is a trivial change, and it gets you started.
-2. [ ] **Colors as floats.** Let the rendering math work with colors in [0, 1] and convert to `Pixel`
+2. [x] **Colors as floats.** Let the rendering math work with colors in [0, 1] and convert to `Pixel`
    in exactly one place (`ToPixel(color)`, with clamping). Every later milestone depends on this.
+   (Done in `src/core/color.h`: `Color` is its own struct with `r`, `g`, `b`; `ToPixel` rounds to nearest.)
 3. [ ] **`Vec3`** (RTiOW 3). Write your own. Make it a plain value type: `constexpr` everywhere,
    arithmetic operators (as hidden friends), `Dot`, `Cross`, `Length`, `UnitVector`.
    (The book writes `vec3`, `unit_vector`; here types and functions are `CamelCase`, see `.clang-tidy`.)
    Add a few `static_assert`s. They are unit tests that run inside the compiler.
+   - *Open design question (devlog 2026-10-13):* one vector type for everything, as in the book, or a
+     tagged template (`Vector3<Tag>`) so that a `Position` and a `Direction` cannot be mixed. If tagged:
+     decide which operators between different tags exist (`Position − Position`, `Position + Direction`).
+   - *Name clashes with raylib:* raylib declares `Color`, `Vector3`, `Ray`, `Camera`, `Material` and
+     `Texture` in the global namespace. Keep your types in `namespace umbra`, and in app code write
+     `umbra::Vector3` for yours and `::Vector3` for raylib's.
 4. [ ] **`Ray`** with `origin`, `direction`, `At(t)`.
 5. [ ] **Camera basics + sky** (RTiOW 4): viewport, `pixel_delta_u/v`, one ray per pixel,
    lerp from white to light blue by the ray's y direction.
@@ -84,6 +93,8 @@ Steps:
 `UnloadTexture()` by hand (`src/app/main.cpp`, `AppState::texture`).
 - [ ] Write a small RAII `Texture` class: it owns the handle, its destructor unloads it, copying is
   deleted, and moving transfers ownership (the moved-from object gets an empty handle).
+  (raylib already has a global `struct Texture`. A class of the same name in an unnamed namespace
+  makes every use ambiguous, so put yours in `namespace umbra::app`, or call it e.g. `OwnedTexture`.)
 - [ ] Replace the manual unload calls with it.
 - [ ] Experiment: make it copyable with `= default` and resize the image a few times. Watch what happens
   (double unload). Then undo it.

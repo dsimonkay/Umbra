@@ -1,4 +1,5 @@
 #include "core/render.h"
+#include "core/color.h"
 
 #include <cstdint>
 
@@ -11,8 +12,7 @@ Pixel RenderPixel(const int x, const int y, const int width, const int height)
     const float g = static_cast<float>(y) / static_cast<float>(height - 1); // 0.0 at the top, 1.0 at the bottom
     const float b = 0.0f;
 
-    return Pixel{static_cast<std::uint8_t>(r * 255.0f), static_cast<std::uint8_t>(g * 255.0f),
-                 static_cast<std::uint8_t>(b * 255.0f), 255};
+    return ToPixel(Color{r, g, b}, 255U);
 }
 
 } // namespace umbra

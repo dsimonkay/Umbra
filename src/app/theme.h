@@ -8,7 +8,8 @@ namespace umbra::ui
 {
 
 // A few colors that the drawing code needs directly (the rest lives in the ImGui style).
-inline constexpr Color clear_color{23, 23, 25, 255};                    // behind everything
+// "::Color" is raylib's 8-bit color; a plain "Color" could pick up umbra::Color (core/color.h) in here.
+inline constexpr ::Color clear_color{23, 23, 25, 255};                  // behind everything
 inline constexpr ImU32 viewport_background = IM_COL32(19, 19, 21, 255); // around the rendered image
 inline constexpr ImU32 accent = IM_COL32(74, 139, 223, 255);            // progress line, highlights
 inline constexpr ImU32 image_shadow_layer = IM_COL32(0, 0, 0, 22);      // drawn 6x, stacked
