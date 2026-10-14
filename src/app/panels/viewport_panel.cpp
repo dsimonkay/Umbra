@@ -62,7 +62,7 @@ void DrawViewport(const AppState &app)
                                      ui::image_shadow_layer, spread);
         }
         ImGui::SetCursorScreenPos(position);
-        rlImGuiImageSizeV(&app.texture, ::Vector2{size.x, size.y});
+        rlImGuiImageSizeV(&app.texture.Get(), ::Vector2{size.x, size.y});
         draw_list->AddRect(ImVec2{position.x - 1.0f, position.y - 1.0f},
                            ImVec2{position.x + size.x + 1.0f, position.y + size.y + 1.0f}, ui::image_outline);
 

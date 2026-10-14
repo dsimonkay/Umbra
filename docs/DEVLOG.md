@@ -15,6 +15,59 @@ Template:
 
 ---
 
+## 2026-10-15 — M1 side quest: RAII `Texture` wrapper
+
+- Done (10-14 and 10-15):
+  - `src/app/texture.h/.cpp`: `Texture` owns the raylib `Texture2D`. The destructor unloads it, copying is
+    deleted, moving transfers ownership (`std::exchange` leaves an empty handle behind). The destructor
+    and the move assignment share a private `Unload()`: if valid, unload, then reset the handle to `{}`,
+    so a second call does nothing. Besides that it has only `Upload()` and one accessor,
+    `const ::Texture2D &Get() const`. No rlImGui include: the viewport calls
+    `rlImGuiImageSizeV(&app.texture.Get(), ...)` itself.
+  - `Upload(std::span<const Pixel>)` always uploads and `assert`s its precondition: the texture is RGBA8
+    and the span holds width × height pixels (`UpdateTexture()` reads that much, whatever the buffer
+    holds). `Framebuffer::Pixels()` returns the span; `Data()` stays for C APIs (the PNG export).
+  - `AppState::texture` is a `Texture` now; the manual `UnloadTexture()` calls are gone. The dirty flag
+    stays in `AppState` (`texture_is_dirty`): `UploadTexture()` in `render_job.cpp` decides *when* to
+    upload, the texture only knows *how*.
+  - `Run()` in `main.cpp`: `AppState` lives in an inner block that ends before `rlImGuiShutdown()` and
+    `CloseWindow()`. A workaround, see *Next tiny step*.
+- Learned:
+  - `DrawViewport(const AppState &)` makes `app.texture` const, and a const object can only call `const`
+    members. Inside a `const` member, `&texture_` is a `const ::Texture2D *`, so a `GetAddress() const`
+    returning `::Texture2D *` does not compile.
+  - Don't give the resource owner one method per library that uses it (`Texture::rlImGuiImageSizeV()`).
+    Lend the raw handle instead, like `unique_ptr::get()` or `vector::data()`. One `const &` accessor is
+    enough: every rlImGui function takes `const Texture *`, raylib takes `Texture2D` by value (except
+    `GenTextureMipmaps`). A non-const `::Texture2D &Get()` would be a hole: `app.texture.Get() = {}` leaks.
+    The const is shallow, as with `const unique_ptr<T>`: it protects the handle, not the GPU object.
+  - `std::move` only casts. On a plain C struct like `Texture2D` the "move" is a copy, so the source still
+    holds the handle. A move must leave the source in a state where its destructor does nothing
+    (`std::exchange(other.texture_, {})`; id 0 makes `IsTextureValid()` false).
+  - `app.texture = Texture{...}` needs no `std::move`: a temporary is already an rvalue, so overload
+    resolution picks the move assignment (by rule, not by optimization). `std::move` is for named objects.
+  - Naming: in the standard library `unique_ptr::release()` gives up ownership *without* freeing, and
+    `reset()` frees. So my "free it" function is `Unload()`, not `Release()`.
+  - `std::span` (C++20) carries the size with the pointer, so the callee can check it. A bare
+    `const Pixel *` can't. The asserts run only in the `debug` preset (`-DNDEBUG` in release).
+  - RAII ties cleanup to scope: locals die in reverse order of construction, at the closing brace. The GL
+    context is a resource too, but `InitWindow()`/`CloseWindow()` are manual calls, so `app` was destroyed
+    after the window. gdb showed `main` → `~AppState()` → `UnloadTexture` → `rlUnloadTexture` → SIGSEGV
+    (exit code 139).
+  - `layout_path` must outlive `rlImGuiShutdown()` (ImGui saves `layout.ini` there), so it stays outside
+    the inner block.
+- Interview story: "Explain the rule of 0/3/5." My first move constructor did
+  `texture_ = std::move(other.texture_)`. It compiled, but the temporary kept the handle and its
+  destructor deleted the GPU texture the app was still using: garbage in the viewport. After the fix,
+  the app segfaulted on exit, because RAII had moved the unload from "before `CloseWindow()`" to "end of
+  `Run()`". Both bugs have the same cause: with RAII the *when* of cleanup is decided by scopes, not by
+  the order of calls, so every resource has to be an object, the window as well.
+- Possible cleanup (optional): viewport_panel.cpp still has the old call commented out.
+- Next tiny step: back to the core. Add `static_assert`s for `ToPixel` in `core/color.h` (black -> 0,
+  white -> 255, 0.5 -> 128, `{2, -1, 0.5}` -> `{255, 0, 128}`), the step from 10-13 that is still open.
+  Optional side step: make the window a resource (a small class that calls `InitWindow` + `rlImGuiSetup`
+  and their shutdown calls, declared before `app`), then the inner block can go.
+
 ## 2026-10-13 — Plumbing: main.cpp split, one CMakeLists.txt per target
 
 - Done (by Claude; nothing changes on screen: the before/after screenshots differ only in the FPS and

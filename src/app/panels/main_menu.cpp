@@ -23,10 +23,12 @@ void HandleShortcuts(AppState &app)
     {
         RestartRender(app);
     }
+
     if (ImGui::Shortcut(ImGuiMod_Ctrl | ImGuiKey_S, ImGuiInputFlags_RouteGlobal))
     {
         SaveSnapshot(app);
     }
+
     if (ImGui::Shortcut(ImGuiMod_Ctrl | ImGuiKey_Q, ImGuiInputFlags_RouteGlobal))
     {
         app.quit = true;
@@ -38,11 +40,13 @@ void HandleShortcuts(AppState &app)
     {
         SetUiScale(app, EffectiveUiScale(app) + ui_scale_step);
     }
+
     if (ImGui::Shortcut(ImGuiMod_Ctrl | ImGuiKey_KeypadSubtract, ImGuiInputFlags_RouteGlobal) ||
         ImGui::Shortcut(ImGuiMod_Ctrl | ImGuiKey_Minus, ImGuiInputFlags_RouteGlobal))
     {
         SetUiScale(app, EffectiveUiScale(app) - ui_scale_step);
     }
+
     if (ImGui::Shortcut(ImGuiMod_Ctrl | ImGuiKey_Keypad0, ImGuiInputFlags_RouteGlobal))
     {
         SetUiScale(app, std::nullopt);
@@ -55,6 +59,7 @@ void DrawMainMenu(AppState &app)
     {
         return;
     }
+
     if (ImGui::BeginMenu("File"))
     {
         if (ImGui::MenuItem("Save PNG", "Ctrl+S"))
@@ -68,15 +73,18 @@ void DrawMainMenu(AppState &app)
         }
         ImGui::EndMenu();
     }
+
     if (ImGui::BeginMenu("Render"))
     {
         if (ImGui::MenuItem("Re-render", "F5"))
         {
             RestartRender(app);
         }
+
         ImGui::MenuItem("Slow motion", nullptr, &app.slow_motion);
         ImGui::EndMenu();
     }
+
     if (ImGui::BeginMenu("View"))
     {
         // "###UiScale" keeps the menu's ID stable while the number in its label changes.
@@ -100,10 +108,12 @@ void DrawMainMenu(AppState &app)
                     SetUiScale(app, preset);
                 }
             }
+
             ImGui::Separator();
             ImGui::TextDisabled("Ctrl + numpad +/-");
             ImGui::EndMenu();
         }
+
         if (ImGui::MenuItem("Reset layout"))
         {
             app.reset_layout = true;
@@ -111,6 +121,7 @@ void DrawMainMenu(AppState &app)
         ImGui::MenuItem("ImGui demo window", nullptr, &app.show_imgui_demo);
         ImGui::EndMenu();
     }
+
     if (ImGui::BeginMenu("Help"))
     {
         if (ImGui::MenuItem("About Umbra"))
@@ -119,6 +130,7 @@ void DrawMainMenu(AppState &app)
         }
         ImGui::EndMenu();
     }
+
     ImGui::EndMainMenuBar();
 }
 

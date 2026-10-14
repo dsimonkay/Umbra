@@ -1,9 +1,10 @@
 # umbra: the GUI application.
 add_executable(umbra
     main.cpp
-    command_line.cpp
+    command_line_options.cpp
     render_job.cpp
     settings.cpp
+    texture.cpp
     ui_scale.cpp
     panels/about_dialog.cpp
     panels/dockspace.cpp

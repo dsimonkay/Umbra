@@ -94,6 +94,7 @@ Settings LoadSettings(const std::filesystem::path &path)
             }
         }
     }
+
     return settings;
 }
 
@@ -117,6 +118,7 @@ std::expected<void, std::string> SaveSettings(const Settings &settings, const st
     {
         return std::unexpected{std::format("cannot write '{}'", path.string())};
     }
+
     return {};
 }
 
@@ -137,6 +139,7 @@ std::expected<std::optional<float>, std::string> ParseUiScale(std::string_view t
     {
         return std::unexpected{std::format("'{}' is not a UI scale (try 1.5, 150% or auto)", text)};
     }
+
     return percent ? value / 100.0f : value;
 }
 

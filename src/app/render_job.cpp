@@ -30,16 +30,12 @@ void RestartRender(AppState &app)
     {
         app.framebuffer.Resize(resolution.width, resolution.height);
 
-        if (IsTextureValid(app.texture))
-        {
-            UnloadTexture(app.texture);
-        }
         // Black, RGBA8 like Pixel. Not raylib's BLACK: that macro expands to "Color{ 0, 0, 0, 255 }",
         // and inside namespace umbra "Color" means umbra::Color as soon as core/color.h is included.
         const ::Image blank = GenImageColor(resolution.width, resolution.height, ::Color{0, 0, 0, 255});
-        app.texture = LoadTextureFromImage(blank);
+        app.texture = Texture{LoadTextureFromImage(blank)};
         UnloadImage(blank);
-        SetTextureFilter(app.texture, TEXTURE_FILTER_BILINEAR);
+        SetTextureFilter(app.texture.Get(), TEXTURE_FILTER_BILINEAR);
     }
 
     app.next_row = 0;
@@ -74,7 +70,7 @@ void AdvanceRender(AppState &app)
         }
     }
 
-    app.texture_dirty = true;
+    app.texture_is_dirty = true;
     app.compute_time += Clock::now() - frame_start;
 
     if (!IsRendering(app))
@@ -85,10 +81,10 @@ void AdvanceRender(AppState &app)
 
 void UploadTexture(AppState &app)
 {
-    if (app.texture_dirty)
+    if (app.texture_is_dirty)
     {
-        UpdateTexture(app.texture, app.framebuffer.Data());
-        app.texture_dirty = false;
+        app.texture.Upload(app.framebuffer.Pixels());
+        app.texture_is_dirty = false;
     }
 }
 

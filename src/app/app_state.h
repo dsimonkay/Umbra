@@ -2,6 +2,7 @@
 #define UMBRA_APP_APP_STATE_H
 
 #include "app/settings.h"
+#include "app/texture.h"
 #include "core/framebuffer.h"
 
 #include <raylib.h>
@@ -26,10 +27,8 @@ struct AppState
 {
     Framebuffer framebuffer;
 
-    // A raw raylib texture handle: whoever owns it must call UnloadTexture().
-    // M1 side quest: wrap it into a small RAII class (rule of five, move-only).
-    ::Texture2D texture{};
-    bool texture_dirty{false};
+    Texture texture{};
+    bool texture_is_dirty{false};
 
     std::size_t resolution_index{1}; // into resolutions (app/render_job.h)
     bool slow_motion{false};

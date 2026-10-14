@@ -1,4 +1,4 @@
-#include "app/command_line.h"
+#include "app/command_line_options.h"
 
 #include <string_view>
 
@@ -23,18 +23,18 @@ std::optional<std::string_view> OptionValue(const int argc, char **argv, const s
 
 } // namespace
 
-CommandLine ParseCommandLine(const int argc, char **argv)
+CommandLineOptions ParseCommandLineOptions(const int argc, char **argv)
 {
-    CommandLine command_line{};
+    CommandLineOptions command_line_options{};
     if (const auto value = OptionValue(argc, argv, "--screenshot"))
     {
-        command_line.screenshot_path = std::filesystem::path{*value};
+        command_line_options.screenshot_path = std::filesystem::path{*value};
     }
     if (const auto value = OptionValue(argc, argv, "--ui-scale"))
     {
-        command_line.ui_scale = std::string{*value};
+        command_line_options.ui_scale = std::string{*value};
     }
-    return command_line;
+    return command_line_options;
 }
 
 } // namespace umbra::app

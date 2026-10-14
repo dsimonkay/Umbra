@@ -5,6 +5,7 @@
 
 #include <cassert>
 #include <cstddef>
+#include <span>
 #include <vector>
 
 namespace umbra
@@ -35,7 +36,10 @@ public:
     void PutPixel(const int x, const int y, const Pixel pixel) { pixels_[Index(x, y)] = pixel; }
     [[nodiscard]] Pixel GetPixel(const int x, const int y) const { return pixels_[Index(x, y)]; }
 
-    /// @brief Raw access, e.g. for uploading to a texture or writing a file.
+    /// @brief All pixels, row by row, e.g. for uploading to a texture.
+    [[nodiscard]] std::span<const Pixel> Pixels() const noexcept { return pixels_; }
+
+    /// @brief Raw access for C APIs, e.g. writing a file.
     [[nodiscard]] const Pixel *Data() const noexcept { return pixels_.data(); }
 
 private:

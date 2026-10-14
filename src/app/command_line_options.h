@@ -1,5 +1,5 @@
-#ifndef UMBRA_APP_COMMAND_LINE_H
-#define UMBRA_APP_COMMAND_LINE_H
+#ifndef UMBRA_APP_COMMAND_LINE_OPTIONS_H
+#define UMBRA_APP_COMMAND_LINE_OPTIONS_H
 
 #include <filesystem>
 #include <optional>
@@ -16,7 +16,7 @@ namespace umbra::app
 ///                                (for the docs, and so Claude Code can "see" the UI)
 ///
 /// Anything else on the command line is ignored.
-struct CommandLine
+struct CommandLineOptions
 {
     std::optional<std::filesystem::path> screenshot_path;
 
@@ -25,8 +25,8 @@ struct CommandLine
     std::optional<std::string> ui_scale;
 };
 
-[[nodiscard]] CommandLine ParseCommandLine(int argc, char **argv);
+[[nodiscard]] CommandLineOptions ParseCommandLineOptions(int argc, char **argv);
 
 } // namespace umbra::app
 
-#endif // UMBRA_APP_COMMAND_LINE_H
+#endif // UMBRA_APP_COMMAND_LINE_OPTIONS_H

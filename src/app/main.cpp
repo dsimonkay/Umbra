@@ -10,14 +10,14 @@
 //   app/panels/           one file per window: menu (+ shortcuts), status bar, dock space, panels
 //   app/ui_scale.cpp      which UI scale is in effect, and changing it
 //   app/settings.cpp      what survives a restart
-//   app/command_line.cpp  --screenshot, --ui-scale
+//   app/command_line_options.cpp  --screenshot, --ui-scale
 //   ui/                   the look (colors, fonts, scaling) and small widgets; no app logic
 //
 // Settings (the UI scale) and the panel layout are kept in the user's config directory,
 // see app/settings.h. Screenshot mode ignores both, so its pictures are reproducible.
 
 #include "app/app_state.h"
-#include "app/command_line.h"
+#include "app/command_line_options.h"
 #include "app/panels/panels.h"
 #include "app/render_job.h"
 #include "app/settings.h"
@@ -51,7 +51,7 @@ void SaveWindowScreenshot(const std::filesystem::path &path)
 }
 
 /// The whole life of the GUI: open the window, run the main loop, clean up.
-int Run(const CommandLine &command_line)
+int Run(const CommandLineOptions &command_line_options)
 {
     SetTraceLogLevel(LOG_WARNING);
     SetConfigFlags(FLAG_WINDOW_RESIZABLE | FLAG_VSYNC_HINT);
@@ -59,7 +59,7 @@ int Run(const CommandLine &command_line)
     SetWindowMinSize(960, 540);
     SetExitKey(KEY_NULL); // Esc should not close the app
     SetTargetFPS(60);
-    if (!command_line.screenshot_path)
+    if (!command_line_options.screenshot_path)
     {
         MaximizeWindow();
     }
@@ -71,79 +71,86 @@ int Run(const CommandLine &command_line)
     io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
     io.ConfigWindowsMoveFromTitleBarOnly = true;
 
-    AppState app{};
-
-    // Settings and panel layout live in the config directory (e.g. ~/.config/umbra).
-    // Screenshot mode uses neither, so it always starts from the defaults.
     std::string layout_path; // ImGui keeps a pointer to it (io.IniFilename) until rlImGuiShutdown()
-    if (!command_line.screenshot_path)
+
+    /// @note AppState holds a Texture RAII instance, which will be cleaned up (=unloaded)
+    ///       automatically once the `app` instance goes out of scope. However... it still requires
+    ///       an existing gl context, which would not be provided in case the `app` instance is
+    ///       declared in the scope of Run(). Sadly, this is an ugly workaround for the moment.
+    /// @todo make the window a resource as well
     {
-        const std::filesystem::path config_directory = ConfigDirectory();
-        std::error_code error;
-        std::filesystem::create_directories(config_directory, error); // ImGui needs it to save the layout
-        app.settings_path = config_directory / "settings.ini";
-        app.settings = LoadSettings(app.settings_path);
-        layout_path = (config_directory / "layout.ini").string();
+        AppState app{};
+
+        // Settings and panel layout live in the config directory (e.g. ~/.config/umbra).
+        // Screenshot mode uses neither, so it always starts from the defaults.
+        if (!command_line_options.screenshot_path)
+        {
+            const std::filesystem::path config_directory = ConfigDirectory();
+            std::error_code error;
+            std::filesystem::create_directories(config_directory, error); // ImGui needs it to save the layout
+            app.settings_path = config_directory / "settings.ini";
+            app.settings = LoadSettings(app.settings_path);
+            layout_path = (config_directory / "layout.ini").string();
+        }
+        io.IniFilename = layout_path.empty() ? nullptr : layout_path.c_str();
+
+        // --ui-scale only applies to this run; it is saved only if you change the scale in the app.
+        if (command_line_options.ui_scale)
+        {
+            if (const auto scale = ParseUiScale(*command_line_options.ui_scale))
+            {
+                app.settings.ui_scale = *scale;
+            }
+            else
+            {
+                TraceLog(LOG_WARNING, "--ui-scale: %s", scale.error().c_str());
+            }
+        }
+
+        RestartRender(app);
+
+        int finished_frames{0};
+        while (!WindowShouldClose() && !app.quit)
+        {
+            // (Re)build the theme when the UI scale changes: a new setting, or (in automatic
+            // mode) the window moved to a monitor with a different scale.
+            if (const float scale = EffectiveUiScale(app); scale != app.applied_ui_scale)
+            {
+                ui::ApplyTheme(scale);
+                app.applied_ui_scale = scale;
+            }
+
+            AdvanceRender(app);
+            UploadTexture(app);
+
+            BeginDrawing();
+            ClearBackground(ui::clear_color);
+
+            rlImGuiBegin();
+            HandleShortcuts(app);
+            DrawMainMenu(app);
+            DrawStatusBar(app);
+            DrawDockspace(app);
+            DrawViewport(app);
+            DrawRenderPanel(app);
+            DrawAbout(app);
+            if (app.show_imgui_demo)
+            {
+                ImGui::ShowDemoWindow(&app.show_imgui_demo);
+            }
+            rlImGuiEnd();
+
+            // Give the layout a few frames to settle after the render has finished.
+            if (command_line_options.screenshot_path && !IsRendering(app) && ++finished_frames == 10)
+            {
+                SaveWindowScreenshot(*command_line_options.screenshot_path);
+                app.quit = true;
+            }
+
+            EndDrawing();
+        }
     }
-    io.IniFilename = layout_path.empty() ? nullptr : layout_path.c_str();
 
-    // --ui-scale only applies to this run; it is saved only if you change the scale in the app.
-    if (command_line.ui_scale)
-    {
-        if (const auto scale = ParseUiScale(*command_line.ui_scale))
-        {
-            app.settings.ui_scale = *scale;
-        }
-        else
-        {
-            TraceLog(LOG_WARNING, "--ui-scale: %s", scale.error().c_str());
-        }
-    }
-
-    RestartRender(app);
-
-    int finished_frames{0};
-    while (!WindowShouldClose() && !app.quit)
-    {
-        // (Re)build the theme when the UI scale changes: a new setting, or (in automatic
-        // mode) the window moved to a monitor with a different scale.
-        if (const float scale = EffectiveUiScale(app); scale != app.applied_ui_scale)
-        {
-            ui::ApplyTheme(scale);
-            app.applied_ui_scale = scale;
-        }
-
-        AdvanceRender(app);
-        UploadTexture(app);
-
-        BeginDrawing();
-        ClearBackground(ui::clear_color);
-
-        rlImGuiBegin();
-        HandleShortcuts(app);
-        DrawMainMenu(app);
-        DrawStatusBar(app);
-        DrawDockspace(app);
-        DrawViewport(app);
-        DrawRenderPanel(app);
-        DrawAbout(app);
-        if (app.show_imgui_demo)
-        {
-            ImGui::ShowDemoWindow(&app.show_imgui_demo);
-        }
-        rlImGuiEnd();
-
-        // Give the layout a few frames to settle after the render has finished.
-        if (command_line.screenshot_path && !IsRendering(app) && ++finished_frames == 10)
-        {
-            SaveWindowScreenshot(*command_line.screenshot_path);
-            app.quit = true;
-        }
-
-        EndDrawing();
-    }
-
-    UnloadTexture(app.texture);
     rlImGuiShutdown();
     CloseWindow();
     return 0;
@@ -155,5 +162,5 @@ int Run(const CommandLine &command_line)
 
 int main(int argc, char **argv)
 {
-    return umbra::app::Run(umbra::app::ParseCommandLine(argc, argv));
+    return umbra::app::Run(umbra::app::ParseCommandLineOptions(argc, argv));
 }
