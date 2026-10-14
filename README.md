@@ -10,7 +10,7 @@ A ray tracer with a GUI, written in C++23.
 
 ## Building on Linux / WSL
 
-Requirements: CMake ≥ 3.25, Ninja, Git, GCC ≥ 13 (14+ recommended for the later C++23 features),
+Requirements: CMake ≥ 3.28, Ninja, Git, GCC ≥ 13 (14+ recommended for the later C++23 features),
 and the X11 / OpenGL development packages. On Ubuntu:
 
 ```bash
@@ -93,11 +93,15 @@ ctest --preset release                                                      # te
 ```
 src/core/   the renderer: plain C++, no UI dependencies (later shared with CUDA)
 src/io/     framebuffer -> PNG
-src/app/    the GUI (raylib + Dear ImGui docking + rlImGui)
+src/ui/     the look (theme: colors, fonts, UI scale) and small ImGui widgets
+src/app/    the GUI (raylib + Dear ImGui docking + rlImGui); panels/ has one file per window
 src/cli/    headless renderer
 cmake/      pinned third-party dependencies
 docs/       roadmap, devlog, gallery
 ```
+
+Each directory under `src/` is one CMake target with its own `CMakeLists.txt`. The table in the root
+`CMakeLists.txt` shows what links what.
 
 ## Gallery
 

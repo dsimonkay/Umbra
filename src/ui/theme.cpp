@@ -1,4 +1,4 @@
-#include "app/theme.h"
+#include "ui/theme.h"
 
 #include <rlImGui.h>
 
@@ -25,7 +25,7 @@ void LoadFonts()
     ImGuiIO &io = ImGui::GetIO();
     const float size = base_font_size;
 
-    // The font is copied next to the executable by CMake (see CMakeLists.txt).
+    // The font is copied next to the executable by CMake (see src/app/CMakeLists.txt).
     const std::filesystem::path font_path =
         std::filesystem::path{GetApplicationDirectory()} / "assets" / "Roboto-Medium.ttf";
 

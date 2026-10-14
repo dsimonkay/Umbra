@@ -34,17 +34,38 @@ There is also a `debug` preset (asserts on). Build directories are `build/<prese
 
 ## Architecture
 
-- `src/core/`: the renderer. Plain C++, **no raylib or ImGui includes**. Keep it that way: in M9 this
-  logic moves to CUDA. `RenderPixel()` in `render.cpp` is the current entry point.
-- `src/io/`: framebuffer to PNG (raylib's image export; no window needed).
-- `src/app/`: the GUI. raylib window + Dear ImGui docking via rlImGui. `main.cpp` has the app state, the
-  progressive row scheduler (12 ms budget per frame, UI thread) and the panels; `theme.cpp` has the
-  colors, fonts and UI scaling; `settings.cpp` reads/writes `~/.config/umbra/settings.ini` (the panel
-  layout is `layout.ini` next to it; screenshot mode uses neither). The UI scale is either the system's
-  (`ui::SystemScale()`: Xft.dpi on Linux/WSLg, display settings on Windows) or a fixed value from
-  *View ▸ UI scale*. Hard-coded pixel sizes in the UI go through `ui::Px()` so they follow it.
-- `src/cli/`: the headless renderer.
+One CMake target per directory under `src/`, each with its own `CMakeLists.txt`; the root
+`CMakeLists.txt` has a table of what links what. Includes are written from `src/` (`#include "core/render.h"`).
+
+- `src/core/` (`umbra_core`): the renderer. Plain C++, **no raylib or ImGui includes**. Keep it that way:
+  in M9 this logic moves to CUDA. `RenderPixel()` in `render.cpp` is the current entry point.
+- `src/io/` (`umbra_io`): framebuffer to PNG (raylib's image export, linked privately; no window needed).
+- `src/ui/` (`umbra_ui`): the look, and nothing about the app. `theme.cpp` has the colors, fonts and UI
+  scaling (hard-coded pixel sizes go through `ui::Px()` so they follow the scale); `widgets.cpp` has the
+  "label | widget" property grid.
+- `src/app/` (`umbra`): the GUI. raylib window + Dear ImGui docking via rlImGui.
+  - `main.cpp`: start-up, the main loop, shut-down. `app_state.h`: `AppState`, everything kept between frames.
+  - `render_job.cpp`: the progressive row scheduler (12 ms budget per frame, UI thread), the texture
+    upload, *Save PNG*.
+  - `panels/`: one file per window (main menu + shortcuts, status bar, dock space, viewport, render panel,
+    about); `panels.h` declares them.
+  - `ui_scale.cpp`: the UI scale in effect, either the system's (`ui::SystemScale()`: Xft.dpi on
+    Linux/WSLg, display settings on Windows) or a fixed value from *View ▸ UI scale*.
+  - `settings.cpp` reads/writes `~/.config/umbra/settings.ini` (the panel layout is `layout.ini` next to
+    it; screenshot mode uses neither). `command_line.cpp`: `--screenshot`, `--ui-scale`.
+- `src/cli/` (`umbra-cli`): the headless renderer.
 - Dependencies are pinned in `cmake/Dependencies.cmake`. **Ask before adding a new dependency.**
+
+Rules that keep it tidy:
+
+- **Link what you include.** A target lists every library it includes directly. `PUBLIC` only if its own
+  headers include it, `PRIVATE` otherwise.
+- **A constant lives next to its only user.** Colors and sizes are the exception: they belong to the theme.
+- **raylib inside `namespace umbra`:** raylib is C, so its names (`Color`, `Image`, `Texture`, `Ray`,
+  `Camera`, ...) are global, and an umbra type with the same name hides them. Write raylib's types with a
+  leading `::` (`::Color`, `::Image`, `::Texture2D`), and don't use raylib's color macros (`BLACK`,
+  `WHITE`, ...): they expand to a plain `Color{...}`, which means `umbra::Color` there. No
+  `using namespace umbra;` in a file that includes `raylib.h`.
 
 ## How to help (important)
 

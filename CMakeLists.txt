@@ -8,6 +8,8 @@ project(umbra
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)    # error instead of silent fallback
 set(CMAKE_CXX_EXTENSIONS OFF)          # -std=c++23, not -std=gnu++23
+set(CMAKE_CXX_SCAN_FOR_MODULES OFF)    # no C++20 modules here; with GCC 14 the scan flags (-fmodules-ts, ...)
+                                       # end up in compile_commands.json and break clangd and clang-tidy
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)  # for clangd / VS Code IntelliSense
 
 # Third-party code: raylib, Dear ImGui (docking branch), rlImGui.
@@ -25,59 +27,31 @@ else()
 endif()
 
 # ---------------------------------------------------------------------------
-# umbra_core: the renderer itself. Plain C++, NO raylib / ImGui dependency.
-# This is the part that will later be shared with the CUDA backend (M9).
+# Our targets: one directory under src/ each, with its own CMakeLists.txt.
+#
+#   target       directory   links                                      what it is
+#   umbra_core   src/core    -                                          the renderer, plain C++
+#   umbra_io     src/io      PUBLIC umbra_core, PRIVATE raylib          framebuffer -> PNG
+#   umbra_ui     src/ui      PUBLIC imgui raylib, PRIVATE rlimgui       the look, small widgets
+#   umbra        src/app     umbra_core umbra_io umbra_ui imgui         the GUI application
+#                            raylib rlimgui
+#   umbra-cli    src/cli     umbra_core umbra_io raylib                 the headless renderer
+#
+# The rule: link what you #include. PUBLIC if your own headers include it (Bazel: deps),
+# PRIVATE if only your .cpp files do (Bazel: implementation_deps).
+#
+# Third party (cmake/Dependencies.cmake): rlimgui links imgui and raylib. GLFW, the window
+# library, is not a target of ours: raylib compiles its own copy (raylib/src/external/glfw)
+# into libraylib.a.
 # ---------------------------------------------------------------------------
-add_library(umbra_core STATIC
-    src/core/render.cpp
-)
-target_include_directories(umbra_core PUBLIC src)
-target_link_libraries(umbra_core PRIVATE umbra_warnings)
 
-# ---------------------------------------------------------------------------
-# umbra_io: framebuffer -> image file (uses raylib's image export, no window).
-# ---------------------------------------------------------------------------
-add_library(umbra_io STATIC
-    src/io/image_io.cpp
-)
-target_link_libraries(umbra_io
-    PUBLIC umbra_core raylib
-    PRIVATE umbra_warnings)
+# Executables go to the top of the build directory (build/<preset>/umbra), not to build/<preset>/src/app/.
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}")
 
-# ---------------------------------------------------------------------------
-# umbra: the GUI application.
-# ---------------------------------------------------------------------------
-add_executable(umbra
-    src/app/main.cpp
-    src/app/settings.cpp
-    src/app/theme.cpp
-)
-target_link_libraries(umbra PRIVATE umbra_core umbra_io rlimgui umbra_warnings)
-target_compile_definitions(umbra PRIVATE UMBRA_VERSION="${PROJECT_VERSION}")
-# theme.cpp asks GLFW (the window library inside raylib) for the monitor's DPI scale.
-# raylib already links GLFW; we only need its header.
-target_include_directories(umbra SYSTEM PRIVATE "${raylib_SOURCE_DIR}/src/external/glfw/include")
-
-# The UI font lives next to the executable (assets/), see theme.cpp.
-add_custom_command(TARGET umbra POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E make_directory "$<TARGET_FILE_DIR:umbra>/assets"
-    COMMAND ${CMAKE_COMMAND} -E copy_if_different
-            "${imgui_SOURCE_DIR}/misc/fonts/Roboto-Medium.ttf"
-            "$<TARGET_FILE_DIR:umbra>/assets/Roboto-Medium.ttf"
-    VERBATIM)
-
-# ---------------------------------------------------------------------------
-# umbra-cli: renders straight to a PNG file, no window.
-# Handy for quick checks, benchmarks and for Claude Code to look at results.
-# ---------------------------------------------------------------------------
-add_executable(umbra-cli
-    src/cli/main.cpp
-)
-target_link_libraries(umbra-cli PRIVATE umbra_core umbra_io umbra_warnings)
-
-# ---------------------------------------------------------------------------
-# Tests (ctest). For now just a smoke test; real unit tests arrive in M2.
-# ---------------------------------------------------------------------------
 enable_testing()
-add_test(NAME cli_smoke
-    COMMAND umbra-cli --width 64 --height 36 --out "${CMAKE_BINARY_DIR}/test-output/smoke.png")
+
+add_subdirectory(src/core)
+add_subdirectory(src/io)
+add_subdirectory(src/ui)
+add_subdirectory(src/app)
+add_subdirectory(src/cli)

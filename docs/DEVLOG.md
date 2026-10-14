@@ -15,6 +15,42 @@ Template:
 
 ---
 
+## 2026-10-13 — Plumbing: main.cpp split, one CMakeLists.txt per target
+
+- Done (by Claude; nothing changes on screen: the before/after screenshots differ only in the FPS and
+  speed numbers):
+  - `src/app/main.cpp`: 737 → 160 lines, start-up and the main loop only. The rest is in `app_state.h`,
+    `render_job.cpp`, `ui_scale.cpp`, `command_line.cpp` and `panels/` (one file per window).
+  - New target `umbra_ui` in `src/ui/`: `theme.cpp` (moved from `src/app/`) and `widgets.cpp` (the
+    property grid). It knows nothing about the app.
+  - One `CMakeLists.txt` per target directory; the root one has a table of what links what. The
+    executables are still in `build/<preset>/`.
+  - `umbra_io` links raylib `PRIVATE`; `umbra-cli` lists raylib itself.
+  - `CMAKE_CXX_SCAN_FOR_MODULES OFF`: no modules here, and the scan flags GCC 14 gets (`-fmodules-ts`,
+    ...) ended up in `compile_commands.json` and broke clang-tidy and clangd.
+- Learned:
+  - CMake vs. Bazel: `PUBLIC` ≈ `deps`, `PRIVATE` ≈ `implementation_deps`. A PRIVATE dependency of a static
+    library still reaches the executable's link line; what PRIVATE stops is the headers and compile
+    flags. Nothing checks that a target includes only what it lists (no layering_check): `src/` is the
+    include root for everyone.
+  - raylib's color macros are a trap inside `namespace umbra`: `BLACK` expands to `Color{ 0, 0, 0, 255 }`,
+    which means `umbra::Color` there as soon as `core/color.h` is included ("too many initializers").
+- Interview story: "How do you keep a build's dependency graph honest?" `umbra-cli` called raylib
+  (`SetTraceLogLevel`) without listing it, and compiled only because `umbra_io` passed raylib on
+  (`PUBLIC`). With `PRIVATE` it failed right away (`raylib.h: No such file or directory`), at the line
+  that had the hidden dependency.
+- Design notes from the chat (not decided yet): a `Vector3Base<T, Tag, Features...>` with mixins like
+  `Additive` (T + T → T) would allow `Position + Position`, exactly what the tags should forbid. The
+  interesting operations mix types: Point − Point → Vector, Point + Vector → Point. Direction and
+  Translation are both vectors (unit length is an invariant, not a separate algebra). So: hand-written
+  `Point3` and `Vector3` (later `Normal3`, which transforms differently); first the table of allowed
+  operations as `static_assert`s, plus a list of what must not compile; a CRTP base (like pbrt-v4's
+  `Tuple3`) only when the duplication hurts. Open question: the midpoint of two points, if
+  `Point + Point` is not allowed?
+- Next tiny step: add `static_assert`s for `ToPixel` in `core/color.h` (black -> 0, white -> 255,
+  0.5 -> 128, `{2, -1, 0.5}` -> `{255, 0, 128}`). Then read RTiOW 3.1 and write the bare vector type(s)
+  with `operator+` and `operator-`, one `static_assert` each.
+
 ## 2026-10-13 — M1: gradient, colors as floats
 
 - Done (two sessions, 10-12 and 10-13):

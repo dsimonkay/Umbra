@@ -90,11 +90,13 @@ Steps:
    (Recomputing the camera for every pixel is wasteful. That is fine for now, and M3 fixes it.)
 
 **Side quest: the rule of five, in practice.** The app keeps a raw raylib `Texture2D` and has to call
-`UnloadTexture()` by hand (`src/app/main.cpp`, `AppState::texture`).
+`UnloadTexture()` by hand (`AppState::texture` in `src/app/app_state.h`; unloaded in
+`src/app/render_job.cpp` and at the end of `src/app/main.cpp`).
 - [ ] Write a small RAII `Texture` class: it owns the handle, its destructor unloads it, copying is
   deleted, and moving transfers ownership (the moved-from object gets an empty handle).
   (raylib already has a global `struct Texture`. A class of the same name in an unnamed namespace
-  makes every use ambiguous, so put yours in `namespace umbra::app`, or call it e.g. `OwnedTexture`.)
+  makes every use ambiguous. The app code lives in `namespace umbra::app`: put yours there, where
+  `Texture` then means yours and raylib's is `::Texture`. Or call it e.g. `OwnedTexture`.)
 - [ ] Replace the manual unload calls with it.
 - [ ] Experiment: make it copyable with `= default` and resize the image a few times. Watch what happens
   (double unload). Then undo it.
