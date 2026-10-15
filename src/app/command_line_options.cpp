@@ -18,6 +18,7 @@ std::optional<std::string_view> OptionValue(const int argc, char **argv, const s
             return std::string_view{argv[i + 1]};
         }
     }
+
     return std::nullopt;
 }
 

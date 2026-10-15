@@ -5,10 +5,10 @@
 #include <cassert>
 #include <cstddef>
 
-namespace umbra
+namespace umbra::app
 {
 
-const ::Texture2D &Texture::Get() const
+[[nodiscard]] const ::Texture2D &Texture::Get() const
 {
     return texture_;
 }
@@ -32,4 +32,4 @@ void Texture::Unload() noexcept
     texture_ = {};
 }
 
-} // namespace umbra
+} // namespace umbra::app

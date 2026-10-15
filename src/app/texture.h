@@ -8,7 +8,7 @@
 #include <span>
 #include <utility>
 
-namespace umbra
+namespace umbra::app
 {
 
 /// @brief RAII raylib Texture wrapper.
@@ -37,7 +37,7 @@ public:
         return *this;
     }
 
-    const ::Texture2D &Get() const;
+    [[nodiscard]] const ::Texture2D &Get() const;
 
     /// @brief Copy the pixels into the texture.
     /// @pre The texture is RGBA8 (like Pixel), and pixels.size() is its width * height.
@@ -49,6 +49,6 @@ private:
     ::Texture2D texture_{};
 };
 
-} // namespace umbra
+} // namespace umbra::app
 
 #endif // UMBRA_APP_TEXTURE_H
