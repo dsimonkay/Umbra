@@ -4,6 +4,7 @@
 #include "core/pixel.h"
 #include <algorithm>
 #include <cstdint>
+#include <type_traits>
 
 namespace umbra
 {
@@ -15,6 +16,10 @@ struct Color
     float g{};
     float b{};
 };
+
+// Basic assumptions.
+static_assert(std::is_aggregate_v<Color>);
+static_assert(std::is_trivially_copyable_v<Color>);
 
 /// @brief Converts a Color to a Pixel.
 /// @param color The color to convert.

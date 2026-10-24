@@ -2,6 +2,7 @@
 #define UMBRA_CORE_PIXEL_H
 
 #include <cstdint>
+#include <type_traits>
 
 namespace umbra
 {
@@ -11,21 +12,17 @@ namespace umbra
 ///       so a whole Framebuffer can be uploaded to a texture without conversion.
 struct Pixel
 {
+    friend constexpr bool operator==(const Pixel &, const Pixel &) = default;
+
     std::uint8_t r{0};
     std::uint8_t g{0};
     std::uint8_t b{0};
     std::uint8_t a{255};
 };
 
-/// @brief Compares two Pixels for equality.
-/// @param lhs The first Pixel to compare.
-/// @param rhs The second Pixel to compare.
-/// @return True if all components of the Pixels are equal, false otherwise.
-constexpr bool operator==(const Pixel lhs, const Pixel rhs)
-{
-    return (lhs.r == rhs.r) && (lhs.g == rhs.g) && (lhs.b == rhs.b) && (lhs.a == rhs.a);
-}
-
+// Basic assumptions.
+static_assert(std::is_aggregate_v<Pixel>);
+static_assert(std::is_trivially_copyable_v<Pixel>);
 static_assert(sizeof(Pixel) == 4, "Pixel must stay tightly packed (texture upload relies on it)");
 
 } // namespace umbra
