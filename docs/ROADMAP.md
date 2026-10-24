@@ -74,17 +74,21 @@ Steps:
 2. [x] **Colors as floats.** Let the rendering math work with colors in [0, 1] and convert to `Pixel`
    in exactly one place (`ToPixel(color)`, with clamping). Every later milestone depends on this.
    (Done in `src/core/color.h`: `Color` is its own struct with `r`, `g`, `b`; `ToPixel` rounds to nearest.)
-3. [ ] **`Vec3`** (RTiOW 3). Write your own. Make it a plain value type: `constexpr` everywhere,
-   arithmetic operators (as hidden friends), `Dot`, `Cross`, `Length`, `UnitVector`.
+3. [x] **`Vector3`** (RTiOW 3). Written by hand as a plain value type: an aggregate (no constructors),
+   `constexpr` arithmetic operators as hidden friends, `Dot`, `Cross`, `SquaredLength`, `Length`,
+   `UnitVector`, and `static_assert`s as unit tests that run inside the compiler.
    (The book writes `vec3`, `unit_vector`; here types and functions are `CamelCase`, see `.clang-tidy`.)
-   Add a few `static_assert`s. They are unit tests that run inside the compiler.
-   - *Open design question (devlog 2026-10-13):* one vector type for everything, as in the book, or a
-     tagged template (`Vector3<Tag>`) so that a `Position` and a `Direction` cannot be mixed. If tagged:
-     decide which operators between different tags exist (`Position − Position`, `Position + Direction`).
+   - `Length()` and `UnitVector()` are not `constexpr`: `std::sqrt` is `constexpr` only from C++26 (GCC
+     folds it anyway as an extension, Clang does not). They get runtime tests in M2 (step 5).
+   - *Design question, decided (devlog 2026-10-25):* one plain `Vector3` for positions, directions and
+     offsets, as in the book. No tags, mixins or CRTP. Whether positions get their own `Point3` is
+     decided at step 4, with `Ray`.
    - *Name clashes with raylib:* raylib declares `Color`, `Vector3`, `Ray`, `Camera`, `Material` and
      `Texture` in the global namespace. Keep your types in `namespace umbra`, and in app code write
      `umbra::Vector3` for yours and `::Vector3` for raylib's.
-4. [ ] **`Ray`** with `origin`, `direction`, `At(t)`.
+4. [ ] **`Ray`** with `origin`, `direction`, `At(t)`. Decide `Point3` here: `using Point3 = Vector3;` as
+   in the book, or its own type with three mixed operators (`P − P → V`, `P + V → P`, `P − V → P`).
+   Write the decision in the devlog.
 5. [ ] **Camera basics + sky** (RTiOW 4): viewport, `pixel_delta_u/v`, one ray per pixel,
    lerp from white to light blue by the ray's y direction.
    (Recomputing the camera for every pixel is wasteful. That is fine for now, and M3 fixes it.)
@@ -101,10 +105,10 @@ Steps:
 - [ ] Experiment: make it copyable with `= default` and resize the image a few times. Watch what happens
   (double unload). Then undo it.
 
-**C++ angle:** value types and the *rule of zero* (`Vec3`, `Framebuffer`) versus resource owners and the
+**C++ angle:** value types and the *rule of zero* (`Vector3`, `Framebuffer`) versus resource owners and the
 *rule of five* (`Texture`); `constexpr` + `static_assert`.
 
-**Interview story:** "Explain the rule of 0/3/5." Answer with your own code: "`Vec3` and the framebuffer
+**Interview story:** "Explain the rule of 0/3/5." Answer with your own code: "`Vector3` and the framebuffer
 need no special members. The texture wrapper is move-only because two copies would release the same
 GPU handle twice. I tried it, and this is what happened."
 
@@ -126,7 +130,9 @@ Steps:
 3. [ ] Simplify the quadratic (the `h = b / 2` trick).
 4. [ ] `HitRecord`, something "hittable", a sphere, a list of objects, an `Interval`.
 5. [ ] **First unit tests.** Add doctest (or Catch2) via FetchContent and test ray–sphere: hit, miss,
-   tangent, ray starting inside. Compare floats with a tolerance.
+   tangent, ray starting inside. Compare floats with a tolerance. Test `Vector3::Length()` and
+   `UnitVector()` here too (no `static_assert`: they are not `constexpr`), and decide whether
+   `NearlyEqual` needs a relative tolerance.
 
 **A design choice to make (and write down in the devlog):** RTiOW uses `virtual` + `shared_ptr`.
 Alternatives:
@@ -333,6 +339,9 @@ The skeleton builds with GCC 13. These features need newer compilers:
 | `std::ranges::to` | 14 | |
 | deducing `this` | 14 | |
 | `std::mdspan` | 15 | |
+
+Not a C++23 feature, but it bites: `std::sqrt` is `constexpr` only from C++26. GCC folds it in a
+`static_assert` anyway; Clang refuses it. Keep such calls out of `static_assert`s.
 
 On Ubuntu 24.04: `sudo apt install g++-14`, then configure with `CXX=g++-14 cmake --preset release`
 (delete `build/` first). MSVC (Visual Studio 2022, latest update) supports all of these.

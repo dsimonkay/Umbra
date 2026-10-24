@@ -15,6 +15,59 @@ Template:
 
 ---
 
+## 2026-10-25 — M1: `Vector3`
+
+- Done (10-24 and 10-25):
+  - `static_assert`s for `ToPixel` in `core/color.h` (the step that was open since 10-13).
+  - `src/core/vector3.h`: `umbra::Vector3`, three `float`s, a plain aggregate. `constexpr` hidden-friend
+    operators `+`, `-`, unary `-`, `float * V`, `V * float`, `V / float`, and a defaulted, exact `==`.
+    Members: `SquaredLength()`, `Dot()`, `Cross()`, `Length()` and `UnitVector()` (the last two are not
+    `constexpr`, see the interview story). `NearlyEqual(a, b, epsilon)` is a separate function with
+    `kVector3Epsilon = 1e-6f`. `render.cpp` includes the header, so the compiler really checks its
+    `static_assert`s (a header nobody includes is never compiled).
+  - `static_assert(std::is_aggregate_v<T>)` and `std::is_trivially_copyable_v<T>` for `Vector3`, `Color` and
+    `Pixel`. `Pixel`'s `==` is defaulted inside the struct now, so it cannot forget a member.
+  - Naming: constants are `kCamelCase` (Google style) at namespace scope and `snake_case` inside
+    functions. `.clang-tidy` and `CLAUDE.md` say so.
+  - Decided: my own `Vector3`, not raylib's (the core cannot see `raylib.h`, raylib's is not `constexpr`,
+    and M9 needs code that also runs on CUDA). `float`, not a template: `Color` is `float`, and so is M9.
+  - Decided: no tags, mixins or CRTP (the 10-13 design notes). They would automate the easy part
+    (`T op T → T`); the interesting operations mix types. One `Vector3` for everything, like the book.
+    Whether positions get their own `Point3` is decided at `Ray` (M1 step 4).
+- Learned:
+  - An aggregate has no user-declared constructor (since C++20 even `= default` counts), no private
+    members and no virtual functions. `Vector3{1, 2, 3}` copies the values into the members in order, no
+    constructor runs; missing values come from the `{}` member initializers. My first version had
+    constructors that left the members uninitialized: `Vector3 v;` held garbage, and only `Vector3{}` was
+    zero (value-initialization). Without constructors `Vector3 v;` is zero too, and the type follows the
+    rule of zero: trivially copyable, `sizeof` is three floats.
+  - `==` with a tolerance is not an equality. It is not transitive (0, 6e-7 and 1.2e-6: `a == b`,
+    `b == c`, but `a != c`), and a fixed `1e-6` stops meaning "close" above 16, where neighbouring floats
+    are further apart than that. So `==` is exact, and the tolerance is an explicit `NearlyEqual` at the
+    call site. Whether it needs a relative tolerance waits for the M2 tests.
+  - A `static_assert` is only worth something if it can fail. Mutation testing by hand: break one term in
+    the code and see whether any assert notices. The axis-vector tests missed all of `Dot`, the `y` of
+    unary minus and two of the six terms of `Cross`. `{1, 2, 3} × {4, 5, 6} = {-3, 6, -3}` uses all six
+    products (12, 15, 12, 6, 5, 8), and `Cross(a, b) · a == 0` checks the geometry.
+  - `Dot(a, b) = |a||b| cos θ`: how much two vectors point the same way (0 = perpendicular), and
+    `Length(v) = sqrt(Dot(v, v))`. `Cross(a, b)` is a vector perpendicular to both, as long as the area of
+    their parallelogram. Needed for: ray–sphere (M2, dots), shading and reflection (M4, dots), the camera
+    basis (M5, crosses).
+  - `UnitVector()` of the zero vector is NaN (0/0). It is a documented precondition (`@pre`), as in the book.
+- Interview story: "Why does your `static_assert` pass on GCC and fail on Clang?" `Length()` was
+  `constexpr` and had `static_assert(Vector3{3, 4, 0}.Length() == 5.0f)`. GCC accepted it; Clang said
+  "static assertion expression is not an integral constant expression" and pointed at `__builtin_sqrtf`
+  inside `<cmath>`. `std::sqrt` is `constexpr` only from C++26. GCC folds it as a builtin anyway (an
+  extension); the standard does not promise it. (MSVC: not tried yet.) Fix: `Length()` and `UnitVector()`
+  lost `constexpr`, their asserts became `SquaredLength()` asserts, and the real checks wait for the unit
+  tests (M2 step 5). I only saw it because the header was compiled with a second compiler (clang-tidy
+  uses Clang as well).
+- Next tiny step: M1 step 4, `src/core/ray.h`. First decide `Point3`: `using Point3 = Vector3;` like the
+  book, or its own type with three mixed operators (`P − P → V`, `P + V → P`, `P − V → P`; about 15
+  lines). Write the decision here. Then `struct Ray { Point3 origin; Vector3 direction; }` with a
+  `constexpr` `At(float t)` (`origin + t * direction`), one `static_assert`, and an include from
+  `render.cpp`.
+
 ## 2026-10-15 — M1 side quest: RAII `Texture` wrapper
 
 - Done (10-14 and 10-15):

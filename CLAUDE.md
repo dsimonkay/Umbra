@@ -90,7 +90,14 @@ If you are not sure which kind a task is, ask in one sentence.
 - Use C++23 where it fits naturally, and say in one sentence why it fits. Check compiler support:
   the baseline is GCC 13; `<print>`, `std::generator` and deducing `this` need GCC 14, `<mdspan>` needs
   GCC 15 (see the cheat sheet at the end of the roadmap).
-- Floating point: compare values and images with a tolerance, never byte for byte.
+- Floating point: compare values and images with a tolerance, never byte for byte. (In a `static_assert`
+  on exactly representable numbers, `==` is fine.)
+- Core value types (`Vector3`, `Color`, `Pixel`) are plain aggregates: no constructors, members with `{}`
+  initializers, pinned by `static_assert(std::is_aggregate_v<T>)`. `operator==` is exact (`= default`); a
+  tolerance is an explicit `NearlyEqual(...)` at the call site.
+- `static_assert`s are the unit tests of the core, so make sure they can fail: break one term of the code
+  and see that some assert notices. Core headers must compile with GCC *and* Clang (clang-tidy uses
+  Clang): no `static_assert` on `std::sqrt` and friends, they are `constexpr` only from C++26.
 - Follow the existing style (`.clang-format`: Allman braces, 4 spaces, 120 columns; brace
   initialization). Naming (`.clang-tidy`): `snake_case` variables, parameters and members (private
   members end with `_`); `CamelCase` types and functions/methods; `lower_case` namespaces.
