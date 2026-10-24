@@ -33,7 +33,7 @@ void DrawStatusBar(const AppState &app)
                 ImGui::TextUnformatted(app.status.c_str());
             }
 
-            const std::string right = std::format("{}   |   {} x {}   |   {} FPS", milestone, app.framebuffer.Width(),
+            const std::string right = std::format("{}   |   {} x {}   |   {} FPS", kMilestone, app.framebuffer.Width(),
                                                   app.framebuffer.Height(), GetFPS());
             const float right_width = ImGui::CalcTextSize(right.c_str()).x;
             ImGui::SameLine(ImGui::GetWindowWidth() - right_width - 2.0f * ImGui::GetStyle().WindowPadding.x);

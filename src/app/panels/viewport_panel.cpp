@@ -21,7 +21,7 @@ namespace
 
 // "visible title###stable id": the part after ### identifies the window,
 // so the icon or the text can change without breaking the saved layout.
-constexpr const char *viewport_window_title{ICON_FA_IMAGE "  Viewport###Viewport"};
+constexpr const char *kViewportWindowTitle{ICON_FA_IMAGE "  Viewport###Viewport"};
 
 } // namespace
 
@@ -29,7 +29,7 @@ void DrawViewport(const AppState &app)
 {
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2{0.0f, 0.0f});
     const bool visible =
-        ImGui::Begin(viewport_window_title, nullptr, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
+        ImGui::Begin(kViewportWindowTitle, nullptr, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
     ImGui::PopStyleVar();
 
     const ImVec2 origin = ImGui::GetCursorScreenPos();
@@ -41,7 +41,7 @@ void DrawViewport(const AppState &app)
     {
         ImDrawList *draw_list = ImGui::GetWindowDrawList();
         draw_list->AddRectFilled(origin, ImVec2{origin.x + available.x, origin.y + available.y},
-                                 ui::viewport_background);
+                                 ui::kViewportBackground);
 
         using ui::Px;
 
@@ -59,19 +59,19 @@ void DrawViewport(const AppState &app)
             const float spread = Px(3.0f) * static_cast<float>(layer);
             draw_list->AddRectFilled(ImVec2{position.x - spread, position.y - spread + Px(4.0f)},
                                      ImVec2{position.x + size.x + spread, position.y + size.y + spread + Px(4.0f)},
-                                     ui::image_shadow_layer, spread);
+                                     ui::kImageShadowLayer, spread);
         }
         ImGui::SetCursorScreenPos(position);
         rlImGuiImageSizeV(&app.texture.Get(), ::Vector2{size.x, size.y});
         draw_list->AddRect(ImVec2{position.x - 1.0f, position.y - 1.0f},
-                           ImVec2{position.x + size.x + 1.0f, position.y + size.y + 1.0f}, ui::image_outline);
+                           ImVec2{position.x + size.x + 1.0f, position.y + size.y + 1.0f}, ui::kImageOutline);
 
         // A thin progress line along the bottom edge of the image.
         if (IsRendering(app))
         {
             const float bottom = position.y + size.y;
             draw_list->AddRectFilled(ImVec2{position.x, bottom - Px(3.0f)},
-                                     ImVec2{position.x + size.x * RenderProgress(app), bottom}, ui::accent);
+                                     ImVec2{position.x + size.x * RenderProgress(app), bottom}, ui::kAccent);
         }
 
         // Small overlay in the top-left corner, like in 3D apps: image size, and how much
@@ -81,8 +81,8 @@ void DrawViewport(const AppState &app)
         const ImVec2 text_size = ImGui::CalcTextSize(hud.c_str());
         const ImVec2 hud_min{origin.x + Px(10.0f), origin.y + Px(10.0f)};
         const ImVec2 hud_max{hud_min.x + text_size.x + Px(16.0f), hud_min.y + text_size.y + Px(8.0f)};
-        draw_list->AddRectFilled(hud_min, hud_max, ui::hud_background, Px(4.0f));
-        draw_list->AddText(ImVec2{hud_min.x + Px(8.0f), hud_min.y + Px(4.0f)}, ui::hud_text, hud.c_str());
+        draw_list->AddRectFilled(hud_min, hud_max, ui::kHudBackground, Px(4.0f));
+        draw_list->AddText(ImVec2{hud_min.x + Px(8.0f), hud_min.y + Px(4.0f)}, ui::kHudText, hud.c_str());
     }
     ImGui::End();
 }

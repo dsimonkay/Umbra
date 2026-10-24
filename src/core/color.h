@@ -29,15 +29,6 @@ struct Color
                  static_cast<std::uint8_t>((std::clamp(color.b, 0.0f, 1.0f) * 255.0f) + 0.5f), alpha};
 }
 
-/// @brief Compares two Pixels for equality.
-/// @param lhs The first Pixel to compare.
-/// @param rhs The second Pixel to compare.
-/// @return True if all components of the Pixels are equal, false otherwise.
-constexpr bool operator==(const Pixel lhs, const Pixel rhs)
-{
-    return (lhs.r == rhs.r) && (lhs.g == rhs.g) && (lhs.b == rhs.b) && (lhs.a == rhs.a);
-}
-
 /// @brief Static assertions to verify the correctness of the ToPixel function.
 static_assert(ToPixel(Color{0.0f, 0.0f, 0.0f}) == Pixel{0, 0, 0, 255});
 static_assert(ToPixel(Color{1.0f, 1.0f, 1.0f}) == Pixel{255, 255, 255, 255});

@@ -38,13 +38,13 @@ void HandleShortcuts(AppState &app)
     if (ImGui::Shortcut(ImGuiMod_Ctrl | ImGuiKey_KeypadAdd, ImGuiInputFlags_RouteGlobal) ||
         ImGui::Shortcut(ImGuiMod_Ctrl | ImGuiKey_Equal, ImGuiInputFlags_RouteGlobal))
     {
-        SetUiScale(app, EffectiveUiScale(app) + ui_scale_step);
+        SetUiScale(app, EffectiveUiScale(app) + kUiScaleStep);
     }
 
     if (ImGui::Shortcut(ImGuiMod_Ctrl | ImGuiKey_KeypadSubtract, ImGuiInputFlags_RouteGlobal) ||
         ImGui::Shortcut(ImGuiMod_Ctrl | ImGuiKey_Minus, ImGuiInputFlags_RouteGlobal))
     {
-        SetUiScale(app, EffectiveUiScale(app) - ui_scale_step);
+        SetUiScale(app, EffectiveUiScale(app) - kUiScaleStep);
     }
 
     if (ImGui::Shortcut(ImGuiMod_Ctrl | ImGuiKey_Keypad0, ImGuiInputFlags_RouteGlobal))
@@ -99,7 +99,7 @@ void DrawMainMenu(AppState &app)
             ImGui::SetItemTooltip("Follow the system: Xft.dpi on Linux and WSLg (96 dpi = 100%%),\n"
                                   "the display settings on Windows.");
             ImGui::Separator();
-            for (const float preset : ui_scale_presets)
+            for (const float preset : kUiScalePresets)
             {
                 const std::string label = std::format("{:.0f}%", preset * 100.0f);
                 const bool current = std::abs(EffectiveUiScale(app) - preset) < 0.01f;

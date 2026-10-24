@@ -14,10 +14,10 @@ namespace umbra::app
 {
 
 /// @brief The fixed scales offered under View > UI scale.
-inline constexpr std::array ui_scale_presets{1.0f, 1.25f, 1.5f, 1.75f, 2.0f};
+inline constexpr std::array kUiScalePresets{1.0f, 1.25f, 1.5f, 1.75f, 2.0f};
 
 /// @brief How much Ctrl + numpad +/- changes the scale.
-inline constexpr float ui_scale_step{0.25f};
+inline constexpr float kUiScaleStep{0.25f};
 
 /// @brief The UI scale in effect: the fixed one from the settings, or else the system's.
 [[nodiscard]] float EffectiveUiScale(const AppState &app);

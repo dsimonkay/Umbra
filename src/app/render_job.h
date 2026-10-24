@@ -15,12 +15,12 @@ namespace umbra::app
 /// @brief An output size offered in the Render panel.
 struct Resolution
 {
-    const char *label;
-    int width;
-    int height;
+    const char *label{""};
+    int width{};
+    int height{};
 };
 
-inline constexpr std::array resolutions{
+inline constexpr std::array kResolutions{
     Resolution{"640 x 360", 640, 360},
     Resolution{"960 x 540", 960, 540},
     Resolution{"1280 x 720 (HD)", 1280, 720},

@@ -124,7 +124,7 @@ int Run(const CommandLineOptions &command_line_options)
             UploadTexture(app);
 
             BeginDrawing();
-            ClearBackground(ui::clear_color);
+            ClearBackground(ui::kClearColor);
 
             rlImGuiBegin();
             HandleShortcuts(app);

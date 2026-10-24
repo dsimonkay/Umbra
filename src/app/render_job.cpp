@@ -25,7 +25,7 @@ float RenderProgress(const AppState &app)
 
 void RestartRender(AppState &app)
 {
-    const Resolution &resolution = resolutions[app.resolution_index];
+    const Resolution &resolution = kResolutions[app.resolution_index];
     if (resolution.width != app.framebuffer.Width() || resolution.height != app.framebuffer.Height())
     {
         app.framebuffer.Resize(resolution.width, resolution.height);

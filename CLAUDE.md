@@ -94,6 +94,9 @@ If you are not sure which kind a task is, ask in one sentence.
 - Follow the existing style (`.clang-format`: Allman braces, 4 spaces, 120 columns; brace
   initialization). Naming (`.clang-tidy`): `snake_case` variables, parameters and members (private
   members end with `_`); `CamelCase` types and functions/methods; `lower_case` namespaces.
+  Constants are `kCamelCase` (Google style): `const` / `constexpr` variables at namespace scope, static
+  `const` / `constexpr` members, and enumerators. Inside a function every constant is `snake_case`, like
+  any local.
 - Commit only when asked. Suggest a short imperative commit message in English.
 
 ## Session rituals
@@ -104,4 +107,4 @@ If you are not sure which kind a task is, ask in one sentence.
   learned, an *Interview story* line if something interesting happened (a bug, a design decision),
   and the **next tiny step** (≤ 30 minutes, concrete).
 - **When a milestone is finished:** follow "Finishing a milestone" in the roadmap (tick the boxes,
-  move ▶, bump `umbra::milestone`, add a gallery picture, write a devlog entry).
+  move ▶, bump `umbra::kMilestone`, add a gallery picture, write a devlog entry).

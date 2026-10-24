@@ -1,5 +1,8 @@
 # Naming conventions. (.clang-format only handles layout; naming is clang-tidy's job.)
 # snake_case variables, CamelCase types and functions.
+# Constants follow the Google style, kCamelCase: const and constexpr variables at namespace scope, static
+# const/constexpr members, and enumerators. Inside a function every constant is snake_case, like any local
+# (constexpr auto frame_budget = ...; const float size = ...;).
 Checks: '-*,readability-identifier-naming'
 CheckOptions:
   - { key: readability-identifier-naming.NamespaceCase, value: lower_case }
@@ -13,3 +16,10 @@ CheckOptions:
   - { key: readability-identifier-naming.MemberCase, value: lower_case }
   - { key: readability-identifier-naming.PrivateMemberSuffix, value: _ }
   - { key: readability-identifier-naming.MacroDefinitionCase, value: UPPER_CASE }
+  # constexpr implies const, so constexpr variables fall under these two as well.
+  - { key: readability-identifier-naming.GlobalConstantCase, value: CamelCase }
+  - { key: readability-identifier-naming.GlobalConstantPrefix, value: k }
+  - { key: readability-identifier-naming.ClassConstantCase, value: CamelCase }
+  - { key: readability-identifier-naming.ClassConstantPrefix, value: k }
+  - { key: readability-identifier-naming.EnumConstantCase, value: CamelCase }
+  - { key: readability-identifier-naming.EnumConstantPrefix, value: k }

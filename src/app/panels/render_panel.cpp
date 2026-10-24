@@ -20,13 +20,13 @@ namespace
 
 // "visible title###stable id": the part after ### identifies the window,
 // so the icon or the text can change without breaking the saved layout.
-constexpr const char *render_window_title{ICON_FA_SLIDERS "  Render###Render"};
+constexpr const char *kRenderWindowTitle{ICON_FA_SLIDERS "  Render###Render"};
 
 } // namespace
 
 void DrawRenderPanel(AppState &app)
 {
-    if (!ImGui::Begin(render_window_title))
+    if (!ImGui::Begin(kRenderWindowTitle))
     {
         ImGui::End();
         return;
@@ -36,12 +36,12 @@ void DrawRenderPanel(AppState &app)
     if (ui::BeginProperties("##output"))
     {
         ui::Property("Resolution");
-        if (ImGui::BeginCombo("##resolution", resolutions[app.resolution_index].label))
+        if (ImGui::BeginCombo("##resolution", kResolutions[app.resolution_index].label))
         {
-            for (std::size_t i{0}; i < resolutions.size(); ++i)
+            for (std::size_t i{0}; i < kResolutions.size(); ++i)
             {
                 const bool selected = (i == app.resolution_index);
-                if (ImGui::Selectable(resolutions[i].label, selected) && !selected)
+                if (ImGui::Selectable(kResolutions[i].label, selected) && !selected)
                 {
                     app.resolution_index = i;
                     RestartRender(app);
@@ -89,7 +89,7 @@ void DrawRenderPanel(AppState &app)
     if (ui::BeginProperties("##renderer"))
     {
         ui::PropertyText("Backend", "CPU, 1 thread");
-        ui::PropertyText("Milestone", std::string{milestone});
+        ui::PropertyText("Milestone", std::string{kMilestone});
         ImGui::EndTable();
     }
 

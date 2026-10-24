@@ -13,21 +13,21 @@ namespace umbra::app
 namespace
 {
 
-constexpr float min_ui_scale{0.75f};
-constexpr float max_ui_scale{3.0f};
+constexpr float kMinUiScale{0.75f};
+constexpr float kMaxUiScale{3.0f};
 
 } // namespace
 
 float EffectiveUiScale(const AppState &app)
 {
-    return std::clamp(app.settings.ui_scale.value_or(ui::SystemScale()), min_ui_scale, max_ui_scale);
+    return std::clamp(app.settings.ui_scale.value_or(ui::SystemScale()), kMinUiScale, kMaxUiScale);
 }
 
 void SetUiScale(AppState &app, std::optional<float> scale)
 {
     if (scale)
     {
-        scale = std::clamp(*scale, min_ui_scale, max_ui_scale);
+        scale = std::clamp(*scale, kMinUiScale, kMaxUiScale);
     }
     if (scale == app.settings.ui_scale)
     {

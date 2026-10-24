@@ -314,7 +314,7 @@ Pick whatever looks fun:
 ## Finishing a milestone
 
 1. Tick the boxes, move ▶ to the next milestone in the status table.
-2. Update `umbra::milestone` in `src/core/render.h` (it shows up in the GUI).
+2. Update `umbra::kMilestone` in `src/core/render.h` (it shows up in the GUI).
 3. Save a picture to `docs/gallery/mN-short-name.png` (*Save PNG*, or `umbra --screenshot`),
    and add it to the gallery in the README.
 4. Write a devlog entry (with an interview story if there is one).

@@ -21,7 +21,7 @@ struct Settings
 {
     /// A fixed UI scale (1.5 = 150 %), or empty: automatic, i.e. follow the system
     /// (Xft.dpi on Linux and under WSLg, the display settings on Windows).
-    std::optional<float> ui_scale;
+    std::optional<float> ui_scale{};
 };
 
 /// @brief Where the settings and the panel layout are kept:

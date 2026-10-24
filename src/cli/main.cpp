@@ -32,7 +32,7 @@ struct Options
     std::filesystem::path output{"renders/cli.png"}; //< The output file path for the rendered image.
 };
 
-constexpr std::string_view usage{"usage: umbra-cli [--width N] [--height N] [--out path.png]\n"};
+constexpr std::string_view kUsage{"usage: umbra-cli [--width N] [--height N] [--out path.png]\n"};
 
 std::optional<int> ParsePositiveInt(const std::string_view text)
 {
@@ -55,17 +55,17 @@ std::expected<Options, int> ParseOptions(const std::vector<std::string_view> &ar
         const std::string_view arg = args[i];
         if (arg == "--help" || arg == "-h")
         {
-            std::cout << usage;
+            std::cout << kUsage;
             return std::unexpected{EXIT_SUCCESS};
         }
         if (arg != "--width" && arg != "--height" && arg != "--out")
         {
-            std::cerr << "error: unknown option '" << arg << "'\n" << usage;
+            std::cerr << "error: unknown option '" << arg << "'\n" << kUsage;
             return std::unexpected{EXIT_FAILURE};
         }
         if (i + 1 >= args.size())
         {
-            std::cerr << "error: '" << arg << "' needs a value\n" << usage;
+            std::cerr << "error: '" << arg << "' needs a value\n" << kUsage;
             return std::unexpected{EXIT_FAILURE};
         }
 

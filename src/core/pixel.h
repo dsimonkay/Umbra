@@ -17,6 +17,15 @@ struct Pixel
     std::uint8_t a{255};
 };
 
+/// @brief Compares two Pixels for equality.
+/// @param lhs The first Pixel to compare.
+/// @param rhs The second Pixel to compare.
+/// @return True if all components of the Pixels are equal, false otherwise.
+constexpr bool operator==(const Pixel lhs, const Pixel rhs)
+{
+    return (lhs.r == rhs.r) && (lhs.g == rhs.g) && (lhs.b == rhs.b) && (lhs.a == rhs.a);
+}
+
 static_assert(sizeof(Pixel) == 4, "Pixel must stay tightly packed (texture upload relies on it)");
 
 } // namespace umbra

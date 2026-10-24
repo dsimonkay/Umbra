@@ -30,7 +30,7 @@ struct AppState
     Texture texture{};
     bool texture_is_dirty{false};
 
-    std::size_t resolution_index{1}; // into resolutions (app/render_job.h)
+    std::size_t resolution_index{1}; // into kResolutions (app/render_job.h)
     bool slow_motion{false};
 
     int next_row{0};                              // first row that is not rendered yet

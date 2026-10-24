@@ -14,7 +14,7 @@ namespace umbra::ui
 namespace
 {
 
-constexpr float base_font_size{16.0f};
+constexpr float kBaseFontSize{16.0f};
 
 /// Called by rlImGui during setup, instead of loading ImGui's built-in pixel font.
 /// The font is loaded at its base size: scaling happens later through the style's
@@ -23,7 +23,7 @@ constexpr float base_font_size{16.0f};
 void LoadFonts()
 {
     ImGuiIO &io = ImGui::GetIO();
-    const float size = base_font_size;
+    const float size = kBaseFontSize;
 
     // The font is copied next to the executable by CMake (see src/app/CMakeLists.txt).
     const std::filesystem::path font_path =
