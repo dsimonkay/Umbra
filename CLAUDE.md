@@ -92,12 +92,16 @@ If you are not sure which kind a task is, ask in one sentence.
   GCC 15 (see the cheat sheet at the end of the roadmap).
 - Floating point: compare values and images with a tolerance, never byte for byte. (In a `static_assert`
   on exactly representable numbers, `==` is fine.)
-- Core value types (`Vector3`, `Color`, `Pixel`) are plain aggregates: no constructors, members with `{}`
-  initializers, pinned by `static_assert(std::is_aggregate_v<T>)`. `operator==` is exact (`= default`); a
-  tolerance is an explicit `NearlyEqual(...)` at the call site.
+- Core value types (`Vector3`, `Point3`, `Ray`, `Color`, `Pixel`) are plain aggregates: no constructors,
+  members with `{}` initializers, pinned by `static_assert(std::is_aggregate_v<T>)`. `operator==` is exact
+  (`= default`); a tolerance is an explicit `NearlyEqual(...)` at the call site.
+- `Point3` and `Vector3` are different types on purpose, with exactly three mixed operators (`P − P → V`,
+  `P + V → P`, `P − V → P`). What must *not* compile is pinned with concepts, e.g.
+  `static_assert(!detail::CanAdd<Point3, Point3>)`. When an operator is added, add its guard too.
 - `static_assert`s are the unit tests of the core, so make sure they can fail: break one term of the code
-  and see that some assert notices. Core headers must compile with GCC *and* Clang (clang-tidy uses
-  Clang): no `static_assert` on `std::sqrt` and friends, they are `constexpr` only from C++26.
+  and see that some assert notices. Use test values that differ from each other and are not just 0 or 1.
+  Core headers must compile with GCC *and* Clang (clang-tidy uses Clang): no `static_assert` on
+  `std::sqrt` and friends, they are `constexpr` only from C++26.
 - Follow the existing style (`.clang-format`: Allman braces, 4 spaces, 120 columns; brace
   initialization). Naming (`.clang-tidy`): `snake_case` variables, parameters and members (private
   members end with `_`); `CamelCase` types and functions/methods; `lower_case` namespaces.

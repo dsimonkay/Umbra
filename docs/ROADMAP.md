@@ -80,17 +80,18 @@ Steps:
    (The book writes `vec3`, `unit_vector`; here types and functions are `CamelCase`, see `.clang-tidy`.)
    - `Length()` and `UnitVector()` are not `constexpr`: `std::sqrt` is `constexpr` only from C++26 (GCC
      folds it anyway as an extension, Clang does not). They get runtime tests in M2 (step 5).
-   - *Design question, decided (devlog 2026-10-25):* one plain `Vector3` for positions, directions and
-     offsets, as in the book. No tags, mixins or CRTP. Whether positions get their own `Point3` is
-     decided at step 4, with `Ray`.
+   - *Design question, decided (devlog 2026-10-25):* one plain `Vector3` for directions and offsets, as in
+     the book. No tags, mixins or CRTP. Positions are a separate `Point3` type, see step 4.
    - *Name clashes with raylib:* raylib declares `Color`, `Vector3`, `Ray`, `Camera`, `Material` and
      `Texture` in the global namespace. Keep your types in `namespace umbra`, and in app code write
      `umbra::Vector3` for yours and `::Vector3` for raylib's.
-4. [ ] **`Ray`** with `origin`, `direction`, `At(t)`. Decide `Point3` here: `using Point3 = Vector3;` as
-   in the book, or its own type with three mixed operators (`P − P → V`, `P + V → P`, `P − V → P`).
-   Write the decision in the devlog.
+4. [x] **`Ray`** with `origin` (a `Point3`), `direction` (a `Vector3`), `At(t)`. `Point3` is its own type,
+   not an alias as in the book, with three mixed operators (`P − P → V`, `P + V → P`, `P − V → P`);
+   `static_assert`s on concepts pin what must *not* compile (`P + P`, `P * float`, `V − P`). The direction
+   is not necessarily a unit vector. (Devlog 2026-10-25.)
 5. [ ] **Camera basics + sky** (RTiOW 4): viewport, `pixel_delta_u/v`, one ray per pixel,
    lerp from white to light blue by the ray's y direction.
+   (The lerp is `(1 − a) * white + a * blue`, so `Color` needs `+` and `float * Color` first.)
    (Recomputing the camera for every pixel is wasteful. That is fine for now, and M3 fixes it.)
 
 **Side quest: the rule of five, in practice.** The app keeps a raw raylib `Texture2D` and has to call
@@ -106,7 +107,7 @@ Steps:
   (double unload). Then undo it.
 
 **C++ angle:** value types and the *rule of zero* (`Vector3`, `Framebuffer`) versus resource owners and the
-*rule of five* (`Texture`); `constexpr` + `static_assert`.
+*rule of five* (`Texture`); `constexpr` + `static_assert` (also for what must *not* compile, via a concept).
 
 **Interview story:** "Explain the rule of 0/3/5." Answer with your own code: "`Vector3` and the framebuffer
 need no special members. The texture wrapper is move-only because two copies would release the same

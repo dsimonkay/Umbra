@@ -15,6 +15,48 @@ Template:
 
 ---
 
+## 2026-10-25 — M1: `Point3` and `Ray`
+
+- Done:
+  - Decided: `Point3` is its own type, not `using Point3 = Vector3;` like the book. The compiler now rejects
+    nonsense (`P + P`, `P * float`, `V − P`, `Dot` on a point), and the whole of RTiOW needs only three mixed
+    operations. Later it matters for transforms (M6–M7): a translation moves a point but not a vector.
+  - `src/core/point3.h`: `umbra::Point3`, an aggregate of three `float`s with `constexpr` hidden friends
+    `P − P → V`, `P + V → P`, `P − V → P`, and a defaulted exact `==`. No `NearlyEqual` and no epsilon yet,
+    nothing needs them.
+  - What must *not* compile is pinned too: `!CanAdd<Point3, Point3>`, `!CanMultiply<Point3, float>`,
+    `!CanSubtract<Vector3, Point3>`, and no implicit conversion between `Point3` and `Vector3` in either
+    direction. The concepts live in `umbra::detail`.
+  - `src/core/ray.h`: `Ray { Point3 origin; Vector3 direction; }`, an aggregate, with `constexpr At(t)`
+    (`origin + t * direction`) and a defaulted `==`. The direction is documented as not necessarily a
+    unit vector. `static_assert`s at `t` = 0, 1, 2 and −0.5. `render.cpp` includes `ray.h`, so the whole
+    chain (`ray.h` → `point3.h` → `vector3.h`) is compiled and checked.
+  - M1 step 4 is done.
+- Learned:
+  - A `requires` expression outside a template is not `false` when its expression is ill-formed, it is a
+    hard error. So "must not compile" needs a concept (a template):
+    `template <typename L, typename R> concept CanAdd = requires(L l, R r) { (l + r); };`, then
+    `static_assert(!CanAdd<Point3, Point3>)`. The parentheses keep `clang-format` from rewriting `l * r` as
+    `l *r`. Checked the check: adding a `Point + Point` operator by mistake makes the build fail.
+  - Mutation testing again. Every mutation of `P + V` and `P − V` survived the first `Point3` asserts, and
+    `{1, 2, 3} − {4, 5, 6} = {-3, -3, -3}` would hide a mixed-up component. For `Ray`, `t = 0` and `t = 1`
+    are the two values where almost any function of `t` is right (0 → 0, 1 → 1): `t * t`, `abs(t)` and a
+    clamp to [0, 1] all survived until `t = 2` and `t = -0.5` were added. Rule of thumb: test with values
+    that differ from each other and are not the identity values 0 and 1.
+  - The open question from 10-13 (the midpoint of two points without `Point + Point`) has a plain answer:
+    `a + (b - a) / 2`.
+  - The direction of a ray is not normalized, so `t` is a distance only if `|direction| = 1`. M2's quadratic
+    uses `Dot(d, d)` instead of assuming 1.
+- Interview story: "How do you make invalid operations unrepresentable, and how do you test it?" `Point3`
+  and `Vector3` hold the same three floats, but their operator sets differ: `P − P → V`, `P + V → P`,
+  `P − V → P`, and nothing else. `P + P` is simply not declared, so it does not compile. A test that
+  something does *not* compile is `static_assert(!CanAdd<Point3, Point3>)` on a concept (inside a template an
+  ill-formed `requires` is `false`, not an error).
+- Next tiny step: M1 step 5, the sky. The gradient is `(1 − a) * white + a * blue`, and `Color` has no
+  arithmetic yet. So first give `Color` `operator+` and `float * Color` as `constexpr` hidden friends,
+  each with a `static_assert` (values that are not 0 or 1), in the style of `Vector3`. Then read RTiOW 4.2
+  (the viewport); the camera itself is the next session.
+
 ## 2026-10-25 — M1: `Vector3`
 
 - Done (10-24 and 10-25):

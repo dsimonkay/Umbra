@@ -1,6 +1,6 @@
 #include "core/render.h"
 #include "core/color.h"
-#include "core/point3.h"
+#include "core/ray.h"
 
 #include <cstdint>
 

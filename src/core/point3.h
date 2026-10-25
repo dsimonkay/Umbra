@@ -65,9 +65,9 @@ static_assert(Point3{} == Point3{0.0f, 0.0f, 0.0f}, "Default constructor should 
 static_assert(Point3{1.0f, 2.0f, 3.0f} + Vector3{4.0f, 5.0f, 6.0f} == Point3{5.0f, 7.0f, 9.0f},
               "Addition operator should work correctly.");
 static_assert(Point3{4.0f, 6.0f, 8.0f} - Point3{1.0f, 2.0f, 3.0f} == Vector3{3.0f, 4.0f, 5.0f},
-              "Subtraction operator should work correctly.");
+              "Subtraction operator should work correctly. (case 1)");
 static_assert(Point3{5.0f, 7.0f, 9.0f} - Vector3{4.0f, 5.0f, 6.0f} == Point3{1.0f, 2.0f, 3.0f},
-              "Subtraction operator should work correctly.");
+              "Subtraction operator should work correctly. (case 2)");
 
 } // namespace umbra
 
