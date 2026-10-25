@@ -8,6 +8,7 @@ namespace umbra
 {
 constexpr float kVector3Epsilon = 1e-6f;
 
+/// @brief Represents a 3D vector with x, y, and z components.
 struct Vector3
 {
     friend constexpr bool operator==(const Vector3 &, const Vector3 &) = default;
