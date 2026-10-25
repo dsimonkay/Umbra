@@ -12,6 +12,23 @@ namespace umbra
 /// @brief Represents a color with red, green and blue components.
 struct Color
 {
+    friend constexpr bool operator==(const Color &, const Color &) = default;
+
+    constexpr friend Color operator+(const Color &lhs, const Color &rhs)
+    {
+        return Color{lhs.r + rhs.r, lhs.g + rhs.g, lhs.b + rhs.b};
+    }
+
+    constexpr friend Color operator*(const float factor, const Color &color)
+    {
+        return Color{factor * color.r, factor * color.g, factor * color.b};
+    }
+
+    constexpr friend Color operator*(const Color &color, const float factor)
+    {
+        return Color{factor * color.r, factor * color.g, factor * color.b};
+    }
+
     float r{};
     float g{};
     float b{};
@@ -39,6 +56,15 @@ static_assert(ToPixel(Color{0.0f, 0.0f, 0.0f}) == Pixel{0, 0, 0, 255});
 static_assert(ToPixel(Color{1.0f, 1.0f, 1.0f}) == Pixel{255, 255, 255, 255});
 static_assert(ToPixel(Color{0.5f, 0.5f, 0.5f}) == Pixel{128, 128, 128, 255});
 static_assert(ToPixel(Color{2.0f, -1.0f, 0.5f}) == Pixel{255, 0, 128, 255});
+
+static_assert(Color{0.75f, 0.5f, 0.25f} + Color{0.5f, 0.875f, 2.0f} == Color{1.25f, 1.375f, 2.25f},
+              "Color addition should work component-wise and must not clamp.");
+static_assert(2.0f * Color{0.75f, 1.5f, 3.0f} == Color{1.5f, 3.0f, 6.0f},
+              "Scaling a color should work component-wise and must not clamp.");
+static_assert((2.0f * Color{0.75f, 1.5f, 3.0f}) == (Color{0.75f, 1.5f, 3.0f} * 2.0f),
+              "Commutativity of scalar multiplication should hold.");
+static_assert((2.0f * Color{0.75f, 1.5f, 3.0f}) + Color{0.25f, 0.5f, 1.0f} == Color{1.75f, 3.5f, 7.0f},
+              "Combined scaling and addition should work component-wise and must not clamp.");
 
 } // namespace umbra
 

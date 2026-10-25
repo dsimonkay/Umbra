@@ -95,6 +95,8 @@ If you are not sure which kind a task is, ask in one sentence.
 - Core value types (`Vector3`, `Point3`, `Ray`, `Color`, `Pixel`) are plain aggregates: no constructors,
   members with `{}` initializers, pinned by `static_assert(std::is_aggregate_v<T>)`. `operator==` is exact
   (`= default`); a tolerance is an explicit `NearlyEqual(...)` at the call site.
+- Colors are linear `float`s and not bounded to [0, 1]: lights and sums of samples exceed 1. `Color`
+  arithmetic never clamps; only `ToPixel` does, once, at the very end.
 - `Point3` and `Vector3` are different types on purpose, with exactly three mixed operators (`P − P → V`,
   `P + V → P`, `P − V → P`). What must *not* compile is pinned with concepts, e.g.
   `static_assert(!detail::CanAdd<Point3, Point3>)`. When an operator is added, add its guard too.

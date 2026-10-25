@@ -23,18 +23,18 @@ struct Vector3
         return Vector3{lhs.x - rhs.x, lhs.y - rhs.y, lhs.z - rhs.z};
     }
 
-    constexpr friend Vector3 operator-(const Vector3 &arg) { return Vector3{-arg.x, -arg.y, -arg.z}; }
+    constexpr friend Vector3 operator-(const Vector3 &vector) { return Vector3{-vector.x, -vector.y, -vector.z}; }
 
-    constexpr friend Vector3 operator*(const float factor, const Vector3 &arg)
+    constexpr friend Vector3 operator*(const float factor, const Vector3 &vector)
     {
-        return Vector3{factor * arg.x, factor * arg.y, factor * arg.z};
+        return Vector3{factor * vector.x, factor * vector.y, factor * vector.z};
     }
 
-    constexpr friend Vector3 operator*(const Vector3 &arg, const float factor) { return factor * arg; }
+    constexpr friend Vector3 operator*(const Vector3 &vector, const float factor) { return factor * vector; }
 
-    constexpr friend Vector3 operator/(const Vector3 &arg, const float factor)
+    constexpr friend Vector3 operator/(const Vector3 &vector, const float factor)
     {
-        return Vector3{arg.x / factor, arg.y / factor, arg.z / factor};
+        return Vector3{vector.x / factor, vector.y / factor, vector.z / factor};
     }
 
     constexpr float SquaredLength() const { return (x * x) + (y * y) + (z * z); }

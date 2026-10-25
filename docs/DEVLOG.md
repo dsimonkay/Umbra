@@ -15,6 +15,37 @@ Template:
 
 ---
 
+## 2026-10-25 — M1: `Color` arithmetic
+
+- Done:
+  - `src/core/color.h`: `Color` got `operator+`, `float * Color` and `Color * float` as `constexpr` hidden
+    friends. No clamping inside them: only `ToPixel` clamps.
+  - `static_assert`s for addition, scaling, the commutativity of scaling, and scale-then-add. The results
+    are above 1 on every component, so a `clamp` sneaking back in fails the build.
+- Learned:
+  - My first version clamped to [0, 1] in `+` and `*`. The sky would still have looked right, because all
+    its values are in [0, 1]. The bug would have shown up later: the sum of 100 samples of 0.5 saturates at
+    1.0, so the average is 0.010 instead of 0.5 (M3's accumulation buffer); `4 * {0.5, 0.25, 0.125}` gave
+    `{1, 1, 0.5}` instead of `{2, 1, 0.5}` (lights brighter than white, M4); and `0.5 * (a + b)` differed
+    from `0.5 * a + 0.5 * b` (for `a = b = 0.75`: 0.5 vs 0.75), so even the algebra broke.
+  - Light is linear and unbounded; [0, 1] is only what the display can show. The book's `vec3` colors are not
+    clamped either, the clamping happens once, when the color is written out. In Umbra that place is
+    `ToPixel`. The ROADMAP's old wording of step 2 ("colors in [0, 1]") invited this mistake; it is reworded.
+  - A bug that no picture shows yet needs a test that looks for it: values outside [0, 1] in the asserts.
+    Checked by mutation: a `clamp` added back on `r`, `g` or `b`, in either operator, fails the build.
+  - Test values that are binary fractions (0.75, 0.875, 1.5) make the float arithmetic exact, so the exact
+    `==` is reliable.
+- Interview story: "Where do you clamp a color in a renderer?" Once, in the final conversion to bytes.
+  Before that, colors are linear floats that may exceed 1: a light is brighter than white, and a sum of
+  samples is N times a pixel until it is divided. A `clamp` inside `operator+` looks harmless and the first
+  picture is still right, but averaging 100 samples of 0.5 then gives 0.01. An operation that "fixes" its
+  result destroys information the next operation needs.
+- Next tiny step: M1 step 5, the camera. Read RTiOW 4.2 (the viewport figure) first. Then, in `RenderPixel`,
+  with a hard-coded camera (`Point3{}` as the center, focal length 1, viewport height 2, the width from the
+  aspect ratio; M3 moves it into a class), build the ray for each pixel: its `direction` is
+  `pixel_center - camera_center`. Look at it before the sky: color the pixel by
+  `0.5 * (UnitVector(direction) + 1)` per component. The sky gradient is the next session.
+
 ## 2026-10-25 — M1: `Point3` and `Ray`
 
 - Done:

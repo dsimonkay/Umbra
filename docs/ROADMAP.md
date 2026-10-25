@@ -71,8 +71,9 @@ Steps:
 
 1. [x] **Gradient.** In `RenderPixel`: red = x / (width − 1), green = y / (height − 1), blue = 0
    (this is the RTiOW chapter 2 image). It is a trivial change, and it gets you started.
-2. [x] **Colors as floats.** Let the rendering math work with colors in [0, 1] and convert to `Pixel`
-   in exactly one place (`ToPixel(color)`, with clamping). Every later milestone depends on this.
+2. [x] **Colors as floats.** Let the rendering math work with linear `float` colors (values above 1 are
+   legal: lights, sums of samples) and convert to `Pixel` in exactly one place (`ToPixel(color)`, which
+   clamps to [0, 1]). Every later milestone depends on this.
    (Done in `src/core/color.h`: `Color` is its own struct with `r`, `g`, `b`; `ToPixel` rounds to nearest.)
 3. [x] **`Vector3`** (RTiOW 3). Written by hand as a plain value type: an aggregate (no constructors),
    `constexpr` arithmetic operators as hidden friends, `Dot`, `Cross`, `SquaredLength`, `Length`,
@@ -91,7 +92,7 @@ Steps:
    is not necessarily a unit vector. (Devlog 2026-10-25.)
 5. [ ] **Camera basics + sky** (RTiOW 4): viewport, `pixel_delta_u/v`, one ray per pixel,
    lerp from white to light blue by the ray's y direction.
-   (The lerp is `(1 − a) * white + a * blue`, so `Color` needs `+` and `float * Color` first.)
+   (The lerp is `(1 − a) * white + a * blue`; `Color` has `+` and `float * Color` for it, unclamped.)
    (Recomputing the camera for every pixel is wasteful. That is fine for now, and M3 fixes it.)
 
 **Side quest: the rule of five, in practice.** The app keeps a raw raylib `Texture2D` and has to call
