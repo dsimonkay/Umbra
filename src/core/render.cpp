@@ -2,12 +2,14 @@
 #include "core/color.h"
 #include "core/ray.h"
 
+#include <cmath>
+
 namespace umbra
 {
 namespace
 {
 
-bool IsSphereHit(const Point3 &sphere_center, const float radius, const Ray &ray)
+float HitSphere(const Point3 &sphere_center, const float radius, const Ray &ray)
 {
     const Vector3 origin_to_center = sphere_center - ray.origin;
     const auto a = ray.direction.Dot(ray.direction);
@@ -15,14 +17,27 @@ bool IsSphereHit(const Point3 &sphere_center, const float radius, const Ray &ray
     const auto c = origin_to_center.Dot(origin_to_center) - radius * radius;
     const auto discriminant = b * b - 4.0f * a * c;
 
+    if (discriminant < 0)
+    {
+        return -1.0;
+    }
+    else
+    {
+        return (-b - std::sqrt(discriminant)) / (2.0f * a);
+    }
+
     return (discriminant >= 0.0f);
 }
 
 Color RayColor(const Ray &ray)
 {
-    if (IsSphereHit(Point3{0.0f, 0.0f, -1.0f}, 0.5f, ray))
+    constexpr auto sphere_center = Point3{0.0f, 0.0f, -1.0f};
+
+    const auto t = HitSphere(sphere_center, 0.5f, ray);
+    if (t > 0.0f)
     {
-        return Color{1.0f, 0.0f, 0.0f};
+        const Vector3 normal = (ray.At(t) - sphere_center).UnitVector();
+        return 0.5f * Color(normal.x + 1.0f, normal.y + 1.0f, normal.z + 1.0f);
     }
 
     const auto unit_direction = ray.direction.UnitVector();
@@ -39,7 +54,7 @@ Pixel RenderPixel(const int x, const int y, const int image_width, const int ima
     constexpr float focal_length = 1.0f;
     constexpr float viewport_height = 2.0f;
     const float viewport_width = viewport_height * (static_cast<float>(image_width) / static_cast<float>(image_height));
-    constexpr auto camera_center = Point3{0, 0, 0};
+    constexpr auto camera_center = Point3{0.0f, 0.0f, 0.0f};
 
     // Calculate the vectors across the horizontal and down the vertical viewport edges.
     const auto viewport_u = Vector3{viewport_width, 0.0f, 0.0f};
