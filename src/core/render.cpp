@@ -12,10 +12,10 @@ namespace
 float HitSphere(const Point3 &sphere_center, const float radius, const Ray &ray)
 {
     const Vector3 origin_to_center = sphere_center - ray.origin;
-    const auto a = ray.direction.Dot(ray.direction);
-    const auto b = -2.0f * ray.direction.Dot(origin_to_center);
-    const auto c = origin_to_center.Dot(origin_to_center) - radius * radius;
-    const auto discriminant = b * b - 4.0f * a * c;
+    const auto a = ray.direction.SquaredLength();
+    const auto h = ray.direction.Dot(origin_to_center);
+    const auto c = origin_to_center.SquaredLength() - (radius * radius);
+    const auto discriminant = (h * h) - (a * c);
 
     if (discriminant < 0)
     {
@@ -23,10 +23,8 @@ float HitSphere(const Point3 &sphere_center, const float radius, const Ray &ray)
     }
     else
     {
-        return (-b - std::sqrt(discriminant)) / (2.0f * a);
+        return (h - std::sqrt(discriminant)) / a;
     }
-
-    return (discriminant >= 0.0f);
 }
 
 Color RayColor(const Ray &ray)
