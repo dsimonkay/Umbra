@@ -24,10 +24,10 @@ inline constexpr std::string_view kMilestone{"M0 - skeleton"};
 ///
 /// @param x The x-coordinate of the pixel.
 /// @param y The y-coordinate of the pixel.
-/// @param width The width of the image.
-/// @param height The height of the image.
+/// @param image_width The width of the image.
+/// @param image_height The height of the image.
 /// @return The rendered Pixel at the specified coordinates.
-[[nodiscard]] Pixel RenderPixel(int x, int y, int width, int height);
+[[nodiscard]] Pixel RenderPixel(int x, int y, int image_width, int image_height);
 
 } // namespace umbra
 

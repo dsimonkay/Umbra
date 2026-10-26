@@ -2,18 +2,45 @@
 #include "core/color.h"
 #include "core/ray.h"
 
-#include <cstdint>
-
 namespace umbra
 {
-
-Pixel RenderPixel(const int x, const int y, const int width, const int height)
+namespace
 {
-    const float r = static_cast<float>(x) / static_cast<float>(width - 1);  // 0.0 at the left edge, 1.0 at the right
-    const float g = static_cast<float>(y) / static_cast<float>(height - 1); // 0.0 at the top, 1.0 at the bottom
-    const float b = 0.0f;
+Color RayColor(const Ray &ray)
+{
+    const auto unit_direction = ray.direction.UnitVector();
+    return Color{1.0f, 1.0f, 1.0f} * 0.5f + Color{unit_direction.x, unit_direction.y, unit_direction.z} * 0.5f;
+}
 
-    return ToPixel(Color{r, g, b}, 255U);
+} // namespace
+
+Pixel RenderPixel(const int x, const int y, const int image_width, const int image_height)
+{
+    // Camera
+    constexpr float focal_length = 1.0f;
+    constexpr float viewport_height = 2.0f;
+    const float viewport_width = viewport_height * (static_cast<float>(image_width) / static_cast<float>(image_height));
+    constexpr auto camera_center = Point3{0, 0, 0};
+
+    // Calculate the vectors across the horizontal and down the vertical viewport edges.
+    const auto viewport_u = Vector3{viewport_width, 0.0f, 0.0f};
+    const auto viewport_v = Vector3{0.0f, -viewport_height, 0.0f};
+
+    // Calculate the horizontal and vertical delta vectors from pixel to pixel.
+    const auto pixel_delta_u = viewport_u / static_cast<float>(image_width);
+    const auto pixel_delta_v = viewport_v / static_cast<float>(image_height);
+
+    // Calculate the location of the upper left pixel.
+    const auto viewport_upper_left =
+        camera_center - Vector3{0.0f, 0.0f, focal_length} - (viewport_u / 2.0f) - (viewport_v / 2.0f);
+    const auto pixel00_loc = viewport_upper_left + 0.5f * (pixel_delta_u + pixel_delta_v);
+
+    const auto pixel_center =
+        pixel00_loc + (static_cast<float>(x) * pixel_delta_u) + (static_cast<float>(y) * pixel_delta_v);
+    const auto ray_direction = pixel_center - camera_center;
+    const auto ray = Ray{camera_center, ray_direction};
+
+    return ToPixel(RayColor(ray));
 }
 
 } // namespace umbra
