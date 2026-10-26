@@ -15,6 +15,41 @@ Template:
 
 ---
 
+## 2026-10-26 — M2: the first sphere (a red disc)
+
+- Done:
+  - M2 step 1 (RTiOW 5.1–5.2, Listing 11): `IsSphereHit(sphere_center, radius, ray)` in the unnamed namespace
+    in `render.cpp`, next to `RayColor`. `origin_to_center = sphere_center - ray.origin` (P − P → V),
+    `a = d · d`, `b = −2 d · oc`, `c = oc · oc − r²`; it hits if `b² − 4ac ≥ 0`.
+  - `RayColor` returns red when the ray hits the sphere at `Point3{0, 0, -1}` with radius 0.5. The viewport
+    shows a red disc in the middle of the sky.
+  - Not done, and not needed any more: the `constexpr` + `static_assert` idea from the last step. Step 2
+    adds a `sqrt`, so the function stops being `constexpr` (Clang), and hit / miss / tangent / inside
+    become unit tests in step 5.
+  - By Claude: `-Wdouble-promotion` is in `umbra_warnings` now (root `CMakeLists.txt`; GCC and Clang only).
+    In the whole project it flags exactly the two lines below in `render.cpp`, nothing else.
+- Learned:
+  - The disc can be checked with numbers, like the corner colors in M1. At 960 × 540 the viewport is 2 units
+    high, so one unit at z = −1 is 270 px. The disc is 312 px wide and 312 px tall (x 324–635,
+    y 114–425): round, centered, radius 156 px. Not 0.5 × 270 = 135 px: the rays that graze the sphere touch
+    it in front of its center, so the silhouette on the viewport plane has the radius
+    `tan(asin(r / d)) = 0.5 / sqrt(0.75) ≈ 0.577` units, and 0.577 × 270 ≈ 156 px.
+  - The discriminant only says whether the *line* meets the sphere: not where, and not on which side of the
+    camera. With the sphere at z = +1, behind the camera, the picture is the same (0 pixels differ;
+    RTiOW 5.2: "This is not a feature!"). Step 2 fixes it: only a hit with `t > 0` counts.
+  - `-2.0` is a `double` literal, so `b` and the discriminant are `double`, while `a` and `c` are `float`.
+    The picture does not change, and `-Wall -Wextra -Wpedantic` say nothing; `-Wdouble-promotion` (GCC and
+    Clang) points at both lines. It will matter in M9: GeForce cards run `double` at 1/32 to 1/64 speed, and
+    one literal pulls a whole expression into `double`. (The radius `0.5` at the call is a `double` too,
+    but it is converted to `float` once, exactly.)
+- Next tiny step: first `float` literals in `IsSphereHit` and its call (`-2.0f`, `0.5f`; 2 minutes; the
+  build is warning-free again when they are right). Then
+  M2 step 2 (RTiOW 6.1): return the hit distance `t` as a `float` instead of a `bool` (−1 on a miss,
+  otherwise `(-b - sqrt(discriminant)) / (2 * a)`, the nearer of the two roots; the `Is...` name will not
+  fit any more). In `RayColor`, if `t > 0`: `n = (ray.At(t) - sphere_center).UnitVector()` (P − P → V), and
+  the color is `0.5 * (n + 1)` per component. Before rendering, work out the expected colors at the center
+  of the disc and at its top, left and right edges. Check: moved to z = +1, the sphere must disappear.
+
 ## 2026-10-26 — M1 done: camera and sky
 
 - Done:

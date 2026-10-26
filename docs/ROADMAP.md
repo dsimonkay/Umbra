@@ -132,9 +132,14 @@ under it.
 
 Steps:
 
-1. [ ] **Ray–sphere intersection** (a quadratic equation; look at the discriminant). The first
+1. [x] **Ray–sphere intersection** (a quadratic equation; look at the discriminant). The first
    image is a flat red disc, and that is the moment it becomes 3D.
+   (Done 2026-10-26: `IsSphereHit` in `render.cpp`, a sphere at `Point3{0, 0, -1}` with radius 0.5. At
+   960 × 540 the disc is 312 px wide, as `tan(asin(r / d))` predicts. Write `float` literals: `2.0` is a
+   `double`.)
 2. [ ] Return the hit distance `t`; color by the normal (`0.5 * (n + 1)`).
+   Only `t > 0` counts: the discriminant alone also draws a sphere behind the camera (RTiOW 5.2; try
+   z = +1).
 3. [ ] Simplify the quadratic (the `h = b / 2` trick).
 4. [ ] `HitRecord`, something "hittable", a sphere, a list of objects, an `Interval`.
 5. [ ] **First unit tests.** Add doctest (or Catch2) via FetchContent and test ray–sphere: hit, miss,

@@ -52,7 +52,7 @@ One CMake target per directory under `src/`, each with its own `CMakeLists.txt`;
   - `ui_scale.cpp`: the UI scale in effect, either the system's (`ui::SystemScale()`: Xft.dpi on
     Linux/WSLg, display settings on Windows) or a fixed value from *View ▸ UI scale*.
   - `settings.cpp` reads/writes `~/.config/umbra/settings.ini` (the panel layout is `layout.ini` next to
-    it; screenshot mode uses neither). `command_line.cpp`: `--screenshot`, `--ui-scale`.
+    it; screenshot mode uses neither). `command_line_options.cpp`: `--screenshot`, `--ui-scale`.
 - `src/cli/` (`umbra-cli`): the headless renderer.
 - Dependencies are pinned in `cmake/Dependencies.cmake`. **Ask before adding a new dependency.**
 
@@ -92,6 +92,9 @@ If you are not sure which kind a task is, ask in one sentence.
   GCC 15 (see the cheat sheet at the end of the roadmap).
 - Floating point: compare values and images with a tolerance, never byte for byte. (In a `static_assert`
   on exactly representable numbers, `==` is fine.)
+- The core computes in `float`, so write `float` literals (`2.0f`, `0.5f`). A bare `2.0` is a `double` and
+  quietly turns the whole expression into `double` (slow on the GPU in M9). The build warns about them
+  (`-Wdouble-promotion` in `umbra_warnings`, GCC and Clang; MSVC has no equivalent).
 - Core value types (`Vector3`, `Point3`, `Ray`, `Color`, `Pixel`) are plain aggregates: no constructors,
   members with `{}` initializers, pinned by `static_assert(std::is_aggregate_v<T>)`. `operator==` is exact
   (`= default`); a tolerance is an explicit `NearlyEqual(...)` at the call site.

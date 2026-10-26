@@ -23,7 +23,9 @@ add_library(umbra_warnings INTERFACE)
 if(MSVC)
     target_compile_options(umbra_warnings INTERFACE /W4 /permissive- /utf-8)
 else()
-    target_compile_options(umbra_warnings INTERFACE -Wall -Wextra -Wpedantic -Wshadow)
+    # -Wdouble-promotion: a bare 2.0 is a double and silently turns float math into double
+    # (slow on the GPU, M9). Write 2.0f instead.
+    target_compile_options(umbra_warnings INTERFACE -Wall -Wextra -Wpedantic -Wshadow -Wdouble-promotion)
 endif()
 
 # ---------------------------------------------------------------------------
