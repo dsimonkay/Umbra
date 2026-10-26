@@ -9,7 +9,7 @@ namespace umbra
 {
 
 /// @brief Shown in the GUI. Bump it when you finish a milestone (docs/ROADMAP.md).
-inline constexpr std::string_view kMilestone{"M0 - skeleton"};
+inline constexpr std::string_view kMilestone{"M1 - first light"};
 
 /// @brief Compute the color of a single pixel. This is the heart of the renderer.
 ///

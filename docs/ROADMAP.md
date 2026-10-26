@@ -22,8 +22,8 @@ and **every step ends with something new on the screen** (or at least a passing 
 | | Milestone | Evenings | You will see |
 |---|---|---|---|
 | ✅ | [M0 Skeleton](#m0--skeleton) | done | the window, the panels, a checkerboard |
-| ▶ | [M1 First light](#m1--first-light-rtiow-24) | 2–3 | a sky gradient, computed from real rays |
-| | [M2 Spheres](#m2--spheres-rtiow-56) | 2–3 | a sphere, shaded by its surface normals |
+| ✅ | [M1 First light](#m1--first-light-rtiow-24) | done | a sky gradient, computed from real rays |
+| ▶ | [M2 Spheres](#m2--spheres-rtiow-56) | 2–3 | a sphere, shaded by its surface normals |
 | | [M3 A clean image](#m3--a-clean-image-rtiow-78--progressive-rendering) | 2–3 | smooth edges; the image refines over time |
 | | [M4 Materials](#m4--materials-rtiow-911) | 3–4 | matte, metal and glass spheres |
 | | [M5 The cover shot](#m5--the-cover-shot-rtiow-1214) | 2 | the book's cover image, rendered by you |
@@ -64,6 +64,8 @@ Your first session (≈ 30–60 minutes):
 
 ## M1 — First light (RTiOW 2–4)
 
+**Done** (2026-10-26).
+
 **Goal:** replace the checkerboard with the first real rays. The result is a sky gradient whose
 colors come from the ray directions.
 
@@ -90,22 +92,26 @@ Steps:
    not an alias as in the book, with three mixed operators (`P − P → V`, `P + V → P`, `P − V → P`);
    `static_assert`s on concepts pin what must *not* compile (`P + P`, `P * float`, `V − P`). The direction
    is not necessarily a unit vector. (Devlog 2026-10-25.)
-5. [ ] **Camera basics + sky** (RTiOW 4): viewport, `pixel_delta_u/v`, one ray per pixel,
+5. [x] **Camera basics + sky** (RTiOW 4): viewport, `pixel_delta_u/v`, one ray per pixel,
    lerp from white to light blue by the ray's y direction.
    (The lerp is `(1 − a) * white + a * blue`; `Color` has `+` and `float * Color` for it, unclamped.)
    (Recomputing the camera for every pixel is wasteful. That is fine for now, and M3 fixes it.)
+   (Done 2026-10-26: a hard-coded camera in `RenderPixel`, the viewport width from the image's real
+   aspect ratio; first the ray direction as a color, as a check, then the sky.)
 
 **Side quest: the rule of five, in practice.** The app keeps a raw raylib `Texture2D` and has to call
 `UnloadTexture()` by hand (`AppState::texture` in `src/app/app_state.h`; unloaded in
 `src/app/render_job.cpp` and at the end of `src/app/main.cpp`).
-- [ ] Write a small RAII `Texture` class: it owns the handle, its destructor unloads it, copying is
+- [x] Write a small RAII `Texture` class: it owns the handle, its destructor unloads it, copying is
   deleted, and moving transfers ownership (the moved-from object gets an empty handle).
   (raylib already has a global `struct Texture`. A class of the same name in an unnamed namespace
   makes every use ambiguous. The app code lives in `namespace umbra::app`: put yours there, where
   `Texture` then means yours and raylib's is `::Texture`. Or call it e.g. `OwnedTexture`.)
-- [ ] Replace the manual unload calls with it.
-- [ ] Experiment: make it copyable with `= default` and resize the image a few times. Watch what happens
+- [x] Replace the manual unload calls with it.
+- [x] Experiment: make it copyable with `= default` and resize the image a few times. Watch what happens
   (double unload). Then undo it.
+  (It happened for real instead: the first move constructor copied the handle, so two objects owned it.
+  Devlog 2026-10-15.)
 
 **C++ angle:** value types and the *rule of zero* (`Vector3`, `Framebuffer`) versus resource owners and the
 *rule of five* (`Texture`); `constexpr` + `static_assert` (also for what must *not* compile, via a concept).

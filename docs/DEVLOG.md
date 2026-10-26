@@ -15,6 +15,55 @@ Template:
 
 ---
 
+## 2026-10-26 — M1 done: camera and sky
+
+- Done:
+  - M1 step 5 (RTiOW 4.2, Listings 9–10): `RenderPixel` builds one ray per pixel from a hard-coded camera:
+    the center at the origin, focal length 1, viewport height 2, and the viewport width from the image's
+    real aspect ratio (the resolution comes from the *Render* panel, so there is no fixed 16:9 as in the
+    book). Then `pixel_delta_u/v`, `pixel00_loc`, and `direction = pixel_center - camera_center`.
+  - `RayColor(const Ray &)` in an unnamed namespace in `render.cpp`. First it returned the direction as a
+    color, `0.5 * (UnitVector(direction) + 1)`, as a check. Now it returns the sky:
+    `a = 0.5 * (unit.y + 1)`, then `(1 − a) * white + a * {0.5, 0.7, 1.0}`.
+  - Cleanup: the dead gradient code and the unused `<cstdint>` are gone, the parameter names in `render.h`
+    match the definition (`image_width`, `image_height`), and the fixed camera values are `constexpr`.
+  - M1 is finished: `kMilestone` is "M1 - first light", `docs/gallery/m1-first-light.png` is in the README,
+    ▶ moved to M2. (The `Texture` side quest was done on 10-15; its boxes are ticked now.)
+- Learned:
+  - Listing 9 is a complete ray tracer, and in Umbra most of it already existed elsewhere. The *Image* block
+    is the app (the resolution); the two loops and the `std::clog` progress are `AdvanceRender` (rows within
+    a 12 ms budget, the progress bar); `write_color` is `ToPixel`. Only the camera block and the loop body
+    went into `RenderPixel`, so one file changed.
+  - The viewport is in world units, the image in pixels. Taking the viewport width from the real
+    `width / height` keeps the pixels square at any resolution.
+  - The image's y grows downward, the world's y upward: hence `viewport_v = (0, −h, 0)`. In Umbra `y = 0` is
+    the top row, like the book's `j`, so the formulas carry over unchanged.
+  - `Point3` paid off: the listing type-checks as written. `viewport_upper_left` is P − V − V − V → P,
+    `pixel00_loc` is P + V → P, and the direction is P − P → V.
+  - Listing 9's all-black image tests nothing: it looks the same when every ray is wrong. The direction as a
+    color can be checked with numbers. At 16:9 the unit direction to a corner is about (±0.78, ±0.44, −0.44),
+    so the corners are green at the top left (0.11, 0.72, 0.28), gold at the top right (0.89, 0.72, 0.28),
+    red at the bottom right (0.89, 0.28, 0.28) and dark teal at the bottom left (0.11, 0.28, 0.28), and the
+    center is olive (0.5, 0.5, 0). The screenshot matched, which checked the direction, the vertical
+    orientation and the aspect ratio at once.
+  - That picture also relied on 10-25's unclamped `Color` arithmetic. The direction's components are
+    negative on the left, at the bottom, and (z) everywhere; a clamping `*` would have made them 0 before
+    the `+ 0.5`.
+  - Recomputing the camera for every pixel costs nothing visible yet: 960 × 540 in 0.006 s in the GUI.
+    M3's camera class computes it once anyway.
+- Interview story: "How do you debug a renderer when all you get is colors?" Make the value you want to
+  check visible as a color, and pick one whose picture you can predict with numbers. Listing 9 renders
+  black, which is also what wrong rays render. Mapping the ray direction to RGB gave four corner colors I
+  could compute by hand, and one look checked the direction, the orientation and the aspect ratio. M2 does
+  the same with surface normals.
+- Next tiny step: M2 step 1 (RTiOW 5.1). In `render.cpp`, next to `RayColor`, write
+  `bool HitSphere(const Point3 &center, float radius, const Ray &ray)`: `oc = center - ray.origin`
+  (P − P → V), `a = ray.direction.Dot(ray.direction)`, `b = -2 * ray.direction.Dot(oc)`,
+  `c = oc.Dot(oc) - radius * radius`; it hits if `b * b - 4 * a * c >= 0`. In `RayColor`, return red when
+  the ray hits the sphere at `Point3{0, 0, -1}` with radius 0.5. Expected: a red disc in the middle of the
+  sky. (There is no `sqrt` in it, so it can be `constexpr` with two `static_assert`s: a ray straight ahead
+  hits, one straight up misses.)
+
 ## 2026-10-25 — M1: `Color` arithmetic
 
 - Done:

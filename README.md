@@ -2,7 +2,7 @@
 
 A ray tracer with a GUI, written in C++23.
 
-![The skeleton (M0)](docs/gallery/m0-skeleton.png)
+![First light (M1)](docs/gallery/m1-first-light.png)
 
 - **Plan:** [docs/ROADMAP.md](docs/ROADMAP.md): milestones from "first ray" to a CUDA backend
 - **Diary:** [docs/DEVLOG.md](docs/DEVLOG.md)
@@ -105,9 +105,9 @@ Each directory under `src/` is one CMake target with its own `CMakeLists.txt`. T
 
 ## Gallery
 
-| M0 — skeleton |
-|---|
-| ![M0](docs/gallery/m0-skeleton.png) |
+| M0 — skeleton | M1 — first light |
+|---|---|
+| ![M0](docs/gallery/m0-skeleton.png) | ![M1](docs/gallery/m1-first-light.png) |
 
 ## Credits
 

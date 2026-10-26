@@ -9,7 +9,9 @@ namespace
 Color RayColor(const Ray &ray)
 {
     const auto unit_direction = ray.direction.UnitVector();
-    return Color{1.0f, 1.0f, 1.0f} * 0.5f + Color{unit_direction.x, unit_direction.y, unit_direction.z} * 0.5f;
+    const auto a = 0.5f * (unit_direction.y + 1.0f);
+
+    return (1.0f - a) * Color{1.0f, 1.0f, 1.0f} + a * Color{0.5f, 0.7f, 1.0f};
 }
 
 } // namespace
