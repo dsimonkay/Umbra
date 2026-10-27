@@ -2,17 +2,21 @@
 #define UMBRA_CORE_INTERVAL_H
 
 #include <limits>
+#include <type_traits>
 
 namespace umbra
 {
 
 /// @brief Represents a numerical interval with a minimum and maximum value.
-///        It will be used to limit the range of a ray hitting objects.
 struct Interval
 {
-    float min{0.0f};
-    float max{std::numeric_limits<float>::max()};
+    float min{-std::numeric_limits<float>::infinity()};
+    float max{std::numeric_limits<float>::infinity()};
 };
+
+// Basic assumptions.
+static_assert(std::is_aggregate_v<Interval>);
+static_assert(std::is_trivially_copyable_v<Interval>);
 
 } // namespace umbra
 

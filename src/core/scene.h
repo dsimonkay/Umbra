@@ -7,6 +7,7 @@
 #include "core/sphere.h"
 
 #include <optional>
+#include <type_traits>
 #include <vector>
 
 namespace umbra
@@ -16,8 +17,11 @@ namespace umbra
 struct Scene
 {
     std::vector<Sphere> spheres{};
-    [[nodiscard]] std::optional<HitRecord> Hit(const Ray &ray, Interval ray_t) const; // the closest one
 };
+
+// Basic assumptions.
+static_assert(std::is_aggregate_v<Scene>);
+static_assert(!std::is_trivially_copyable_v<Scene>); // Because of the std::vector member.
 
 } // namespace umbra
 

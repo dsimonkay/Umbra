@@ -2,6 +2,7 @@
 # This is the part that will later be shared with the CUDA backend (M9).
 add_library(umbra_core STATIC
     render.cpp
+    sphere.cpp
 )
 # Includes are written from src/ (#include "core/render.h"); whoever links umbra_core gets that root too.
 target_include_directories(umbra_core PUBLIC "${PROJECT_SOURCE_DIR}/src")

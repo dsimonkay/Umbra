@@ -15,6 +15,55 @@ Template:
 
 ---
 
+## 2026-10-27 — M2: normals, `b = −2h`, `Sphere` and `Scene`
+
+- Done:
+  - M2 step 2 (RTiOW 6.1): the hit function returns the nearer root `t`, and the sphere is colored by its
+    normal, `0.5 * (n + 1)` (RTiOW Image 4).
+  - M2 step 3 (RTiOW 6.2): `a = SquaredLength()`, `h = d · oc`, the discriminant is `h² − ac`.
+  - M2 step 4, first half (RTiOW 6.3, 6.5): `core/interval.h`, `core/hit_record.h`, `core/sphere.h/.cpp`
+    (`Sphere::Hit` returns `std::optional<HitRecord>`: the nearer root inside the interval, else the farther
+    one) and `core/scene.h` (`Scene { std::vector<Sphere> spheres; }`; `Scene::Hit` is only declared yet).
+  - `RenderPixel(const Scene &, x, y, width, height)`. The app owns the scene (`AppState::scene`) and
+    `AdvanceRender` passes it down; the CLI builds its own. Both start with the same one-sphere scene, and
+    `RayColor` asks only the first sphere for now.
+  - Checked: the refactor changes no pixel (0 of 518 400 differ from the 6.2 render). A sphere at z = +1 is
+    gone (0 pixels; on 10-26 it was a full disc), and with the camera inside a sphere every pixel hits (the
+    far root).
+- Decided (the M2 design choice):
+  - Scene objects are values: `std::vector<Sphere>`, not RTiOW's `virtual` + `shared_ptr`. The first book has
+    one shape type, so up to M9 a "hittable" interface would have exactly one implementation. A `Sphere` is
+    16 bytes, and the vector holds them back to back; the book's sphere is 24 bytes (the vtable pointer) plus
+    one heap block per object.
+  - A second shape type (Beyond) makes it `std::variant<Sphere, ...>` + `std::visit`. A whole triangle mesh
+    can be one alternative, with its triangles (and later its own BVH) inside, behind the same `Hit`, like
+    the two levels of GPU ray tracing APIs (a BLAS per mesh, a TLAS over them). The switch is mechanical: a
+    `Shape` alias and one `visit` line in `Scene::Hit`.
+  - `std::optional<HitRecord>` instead of `bool` + an out parameter: there is no half-filled record.
+  - Names: the book's `world` / `hittable_list` is `Scene`. `hittable` has no counterpart (yet).
+  - The scene is a parameter, not a global: the caller owns it, and `RenderPixel` gets a `const Scene &`, so
+    it still has no hidden state (M8).
+- Learned:
+  - Where `b = −2h` comes from (RTiOW 6.2 does not say). The sphere equation is a square,
+    `|t·d − oc|² = r²`: expanding it doubles the middle term (`−2t(d · oc)`), and the `2a` and `4ac` of the
+    quadratic formula come from completing the square, which halves it again. Completing the square of
+    `a·t² − 2h·t + c = 0` directly gives `t = (h ± √(h² − ac)) / a`, without any 2s and 4s. (The 3.x
+    edition of the book called it `half_b`.)
+  - Geometrically, with `|d| = 1`: `h` is the `t` of the point on the ray closest to the center,
+    `m² = |oc|² − h²` is the squared distance of the center from the ray, and `h² − c = r² − m²` is the
+    squared half chord `s²`. So `t = h ± s`: go to the closest point, then half a chord back or forth. The
+    ray hits when it passes within `r` of the center; at the silhouette `m = r` (the 156 px of 10-26).
+- Interview story: "Why values instead of `virtual` + `shared_ptr`?" The interface would have had one
+  implementation for eight milestones, and every pointer costs something later. With values an index names
+  an object (M6 picking), the threads read a vector of 16-byte spheres without touching a shared reference
+  count (the book's `rec.mat = mat` copies a `shared_ptr` on every hit, M8), and the GPU gets the array in
+  one copy (M9). If a second shape type arrives, a `std::variant` keeps the values.
+- Next tiny step: `Scene::Hit` (RTiOW 6.5): loop over `spheres` and keep the closest hit by shrinking the
+  interval's `max` to the last hit's `t` (the book's `closest_so_far`). `RayColor` calls `scene.Hit(...)`
+  instead of asking `spheres[0]`. Then the ground sphere, `Sphere{Point3{0, -100.5f, -1}, 100}`, in one
+  function that both `main`s call (e.g. `DemoScene()` in core). Expected: RTiOW Image 5. After that, 6.4's
+  `front_face` (the comment in `HitRecord` already promises "always against the ray").
+
 ## 2026-10-26 — M2: the first sphere (a red disc)
 
 - Done:

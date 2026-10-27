@@ -38,7 +38,9 @@ One CMake target per directory under `src/`, each with its own `CMakeLists.txt`;
 `CMakeLists.txt` has a table of what links what. Includes are written from `src/` (`#include "core/render.h"`).
 
 - `src/core/` (`umbra_core`): the renderer. Plain C++, **no raylib or ImGui includes**. Keep it that way:
-  in M9 this logic moves to CUDA. `RenderPixel()` in `render.cpp` is the current entry point.
+  in M9 this logic moves to CUDA. `RenderPixel(scene, x, y, width, height)` in `render.cpp` is the current
+  entry point. The scene (`scene.h`: a `std::vector<Sphere>`) belongs to the caller: `AppState::scene` in
+  the app, a local in the CLI.
 - `src/io/` (`umbra_io`): framebuffer to PNG (raylib's image export, linked privately; no window needed).
 - `src/ui/` (`umbra_ui`): the look, and nothing about the app. `theme.cpp` has the colors, fonts and UI
   scaling (hard-coded pixel sizes go through `ui::Px()` so they follow the scale); `widgets.cpp` has the
@@ -95,9 +97,13 @@ If you are not sure which kind a task is, ask in one sentence.
 - The core computes in `float`, so write `float` literals (`2.0f`, `0.5f`). A bare `2.0` is a `double` and
   quietly turns the whole expression into `double` (slow on the GPU in M9). The build warns about them
   (`-Wdouble-promotion` in `umbra_warnings`, GCC and Clang; MSVC has no equivalent).
-- Core value types (`Vector3`, `Point3`, `Ray`, `Color`, `Pixel`) are plain aggregates: no constructors,
-  members with `{}` initializers, pinned by `static_assert(std::is_aggregate_v<T>)`. `operator==` is exact
-  (`= default`); a tolerance is an explicit `NearlyEqual(...)` at the call site.
+- Scene objects are values (devlog 2026-10-27): `Scene` holds a `std::vector<Sphere>`, not the book's
+  `virtual` + `shared_ptr`; a second shape type would make it a `std::variant`. The book's `world` /
+  `hittable_list` is `Scene` here.
+- Core value types (`Vector3`, `Point3`, `Ray`, `Color`, `Pixel`, `Interval`, `HitRecord`, `Sphere`) are
+  plain aggregates: no constructors, members with `{}` initializers, pinned by
+  `static_assert(std::is_aggregate_v<T>)`. `operator==` is exact (`= default`); a tolerance is an explicit
+  `NearlyEqual(...)` at the call site.
 - Colors are linear `float`s and not bounded to [0, 1]: lights and sums of samples exceed 1. `Color`
   arithmetic never clamps; only `ToPixel` does, once, at the very end.
 - `Point3` and `Vector3` are different types on purpose, with exactly three mixed operators (`P − P → V`,

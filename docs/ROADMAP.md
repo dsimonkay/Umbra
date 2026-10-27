@@ -137,11 +137,15 @@ Steps:
    (Done 2026-10-26: `IsSphereHit` in `render.cpp`, a sphere at `Point3{0, 0, -1}` with radius 0.5. At
    960 × 540 the disc is 312 px wide, as `tan(asin(r / d))` predicts. Write `float` literals: `2.0` is a
    `double`.)
-2. [ ] Return the hit distance `t`; color by the normal (`0.5 * (n + 1)`).
+2. [x] Return the hit distance `t`; color by the normal (`0.5 * (n + 1)`).
    Only `t > 0` counts: the discriminant alone also draws a sphere behind the camera (RTiOW 5.2; try
    z = +1).
-3. [ ] Simplify the quadratic (the `h = b / 2` trick).
+   (Done 2026-10-27: RTiOW Image 4. With the interval in `Sphere::Hit` a sphere at z = +1 is gone.)
+3. [x] Simplify the quadratic (the `b = −2h` trick, RTiOW 6.2; why it works: devlog 2026-10-27).
 4. [ ] `HitRecord`, something "hittable", a sphere, a list of objects, an `Interval`.
+   (In progress: `Interval`, `HitRecord`, `Sphere::Hit`, and `Scene`, the book's `world`. The caller owns the
+   scene and passes it to `RenderPixel` as a `const Scene &`. Open: `Scene::Hit` (the closest hit), the
+   ground sphere, `front_face` (RTiOW 6.4).)
 5. [ ] **First unit tests.** Add doctest (or Catch2) via FetchContent and test ray–sphere: hit, miss,
    tangent, ray starting inside. Compare floats with a tolerance. Test `Vector3::Length()` and
    `UnitVector()` here too (no `static_assert`: they are not `constexpr`), and decide whether
@@ -154,6 +158,9 @@ Alternatives:
 - `std::variant<sphere, ...>` + `std::visit` instead of virtual functions.
 
 Pick one, and know why. Plain values and arrays will make M8 (threads) and M9 (GPU) easier.
+
+*Decided (devlog 2026-10-27):* values. `Scene` holds a `std::vector<Sphere>`, and `Hit` returns
+`std::optional<HitRecord>`. A second shape type would make it a `std::variant`.
 
 **C++ angle:** `std::optional`, `std::variant` vs. virtual dispatch, ownership (`unique_ptr` /
 `shared_ptr` / values), unit testing floating-point code.

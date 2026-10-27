@@ -23,13 +23,14 @@ inline constexpr std::string_view kMilestone{"M1 - first light"};
 /// @pre The coordinates (x, y) must be within the bounds of the image dimensions (0 <= x < width, 0 <= y < height).
 /// @pre The image dimensions (width, height) must be positive integers (width > 1, height > 1).
 ///
+/// @param scene The scene to render.
 /// @param x The x-coordinate of the pixel.
 /// @param y The y-coordinate of the pixel.
-/// @param scene The scene to render.
 /// @param image_width The width of the image.
 /// @param image_height The height of the image.
 /// @return The rendered Pixel at the specified coordinates.
-[[nodiscard]] Pixel RenderPixel(const Scene &scene, int x, int y, int image_width, int image_height);
+[[nodiscard]] Pixel RenderPixel(const Scene &scene, const int x, const int y, const int image_width,
+                                const int image_height);
 
 } // namespace umbra
 

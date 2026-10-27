@@ -2,49 +2,29 @@
 #include "core/color.h"
 #include "core/scene.h"
 
-#include <cmath>
+#include <limits>
 
 namespace umbra
 {
 namespace
 {
 
-float HitSphere(const Point3 &sphere_center, const float radius, const Ray &ray)
-{
-    const Vector3 origin_to_center = sphere_center - ray.origin;
-    const auto a = ray.direction.SquaredLength();
-    const auto h = ray.direction.Dot(origin_to_center);
-    const auto c = origin_to_center.SquaredLength() - (radius * radius);
-    const auto discriminant = (h * h) - (a * c);
-
-    if (discriminant < 0)
-    {
-        return -1.0f;
-    }
-    else
-    {
-        return (h - std::sqrt(discriminant)) / a;
-    }
-}
-
 Color RayColor(const Scene &scene, const Ray &ray)
 {
-    if (scene.spheres.empty())
+    // Currently only handling the first sphere in the scene. !!!!
+    if (!scene.spheres.empty())
     {
-        return Color{0.0f, 0.0f, 0.0f};
+        const auto sphere = scene.spheres[0];
+
+        const auto maybe_hit = sphere.Hit(ray, {0.001f, std::numeric_limits<float>::infinity()});
+        if (maybe_hit.has_value())
+        {
+            const auto &normal = maybe_hit->normal;
+            return 0.5f * Color{normal.x + 1.0f, normal.y + 1.0f, normal.z + 1.0f};
+        }
     }
 
-    // Currently only handling the first sphere in the scene.
-    const auto [sphere_center, sphere_radius] = scene.spheres[0];
-    // const auto sphere_center = sphere.center;
-
-    const auto t = HitSphere(sphere_center, sphere_radius, ray);
-    if (t > 0.0f)
-    {
-        const Vector3 normal = (ray.At(t) - sphere_center).UnitVector();
-        return 0.5f * Color{normal.x + 1.0f, normal.y + 1.0f, normal.z + 1.0f};
-    }
-
+    // Otherwise, compute the background color based on the ray direction.
     const auto unit_direction = ray.direction.UnitVector();
     const auto a = 0.5f * (unit_direction.y + 1.0f);
 
