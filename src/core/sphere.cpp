@@ -37,7 +37,8 @@ std::optional<HitRecord> Sphere::Hit(const Ray &ray, const Interval &valid_inter
 
     hit.t = root;
     hit.point = ray.At(hit.t);
-    hit.normal = (hit.point - center) / radius;
+    const auto normal = (hit.point - center) / radius;
+    hit.SetFaceNormal(ray, normal);
 
     return hit;
 }

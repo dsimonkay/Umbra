@@ -1,6 +1,7 @@
 # umbra_core: the renderer itself. Plain C++, NO raylib / ImGui dependency.
 # This is the part that will later be shared with the CUDA backend (M9).
 add_library(umbra_core STATIC
+    hit_record.cpp
     render.cpp
     sphere.cpp
 )
