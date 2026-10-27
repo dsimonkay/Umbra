@@ -83,6 +83,7 @@ int Run(const CommandLineOptions &command_line_options)
 
         // Add dummy scene to the app
         app.scene.spheres.push_back({umbra::Point3{0.0f, 0.0f, -1.0f}, 0.5f});
+        app.scene.spheres.push_back({umbra::Point3{0.0f, -100.5f, -1.0f}, 100.0f});
 
         // Settings and panel layout live in the config directory (e.g. ~/.config/umbra).
         // Screenshot mode uses neither, so it always starts from the defaults.

@@ -111,6 +111,7 @@ int main(int argc, char **argv)
     // dummy scene with a single sphere
     umbra::Scene scene{};
     scene.spheres.push_back({umbra::Point3{0.0f, 0.0f, -1.0f}, 0.5f});
+    scene.spheres.push_back({umbra::Point3{0.0f, -100.5f, -1.0f}, 100.0f});
 
     const auto start = std::chrono::steady_clock::now();
     for (int y{0}; y < framebuffer.Height(); ++y)

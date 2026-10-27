@@ -15,6 +15,43 @@ Template:
 
 ---
 
+## 2026-10-27 — M2: `Scene::Hit` and the ground sphere (RTiOW Image 5)
+
+- Done:
+  - M2 step 4 (RTiOW 6.5): `Scene::Hit(ray, interval)` in the new `core/scene.cpp` returns the closest hit. It
+    goes over `spheres` and shrinks the interval's `max` to the `t` of each hit (the book's `closest_so_far`),
+    so a later sphere counts only if it is nearer. `RayColor` calls `scene.Hit(...)` instead of asking
+    `spheres[0]`.
+  - The ground sphere, `Sphere{Point3{0, -100.5f, -1}, 100}`, in both `main`s: RTiOW Image 5.
+  - `front_face` (RTiOW 6.4) was already in the previous commit: `HitRecord::SetFaceNormal` turns the normal
+    against the ray. The previous entry still listed it as open. With that, M2 step 4 is done.
+  - The unit-normal assert in `SetFaceNormal` uses a tolerance now (`|n · n − 1| < 1e-6`). With `== 1.0f`, a
+    build with asserts aborted at the first pixel that hit the sphere. Release builds hide it (`-DNDEBUG`).
+- Learned:
+  - The first `Scene::Hit` drew the ground over the lower part of the small sphere. `closest_hit_so_far`
+    started at `max` and was never updated, so every hit passed `t < closest_hit_so_far`. The *last* sphere
+    in the list that was hit won, not the nearest one. 30 144 pixels were wrong: rows 294–425, the part of
+    the small sphere below the horizon.
+  - With the ground *first* in the list, the broken version renders exactly the right picture (0 pixels
+    differ). A "closest" search can look right because of the order of the objects alone.
+  - The picture can be checked with numbers again. The ground was in the right place: at 960 × 540 the
+    horizon is 24 px below the center, because the ray that grazes the ground sphere points 5.2° below the
+    horizontal, and `tan(5.2°) × 270 ≈ 24`. The small sphere ends 156 px below the center (as on 10-26), and
+    the ground starts right under it. The ground is almost flat green because its normal is nearly
+    `(0, 1, 0)`, and `0.5 * (n + 1) = (0.5, 1, 0.5)`.
+  - With the shrinking interval, a separate `t < closest` check is not needed: `Sphere::Hit` already rejects
+    every `t` outside the interval.
+- Interview story: "How do you test code whose result must not depend on order?" My first closest-hit loop
+  kept the last hit instead of the nearest one: the "closest so far" variable was never updated. With the
+  ground sphere first in the list, the image was pixel-identical to the correct one. With the ground second,
+  30 144 pixels were wrong. A test with one fixed order could have passed, so the test tries both orders,
+  and I check that it fails on the broken code.
+- Next tiny step: M2 step 5, the first unit test, about today's bug. Add doctest via FetchContent (a test
+  target, registered with `ctest`). Put two spheres on one ray and check that `Scene::Hit` returns the `t`
+  of the nearer one in both list orders. Then bring back the bug for a minute (drop the line that shrinks
+  `max`) and see the test fail. Optional 5-minute step first: a `DemoScene()` in core, so the two `main`s
+  stop duplicating the scene (the CLI's comment still says "a single sphere").
+
 ## 2026-10-27 — M2: normals, `b = −2h`, `Sphere` and `Scene`
 
 - Done:

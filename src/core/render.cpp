@@ -11,24 +11,18 @@ namespace
 
 Color RayColor(const Scene &scene, const Ray &ray)
 {
-    // Currently only handling the first sphere in the scene. !!!!
-    if (!scene.spheres.empty())
+    const auto maybe_hit = scene.Hit(ray, {0.001f, std::numeric_limits<float>::infinity()});
+    if (maybe_hit.has_value())
     {
-        const auto sphere = scene.spheres[0];
-
-        const auto maybe_hit = sphere.Hit(ray, {0.001f, std::numeric_limits<float>::infinity()});
-        if (maybe_hit.has_value())
-        {
-            const auto &normal = maybe_hit->normal;
-            return 0.5f * Color{normal.x + 1.0f, normal.y + 1.0f, normal.z + 1.0f};
-        }
+        const auto &normal = maybe_hit->normal;
+        return 0.5f * Color{normal.x + 1.0f, normal.y + 1.0f, normal.z + 1.0f};
     }
 
     // Otherwise, compute the background color based on the ray direction.
     const auto unit_direction = ray.direction.UnitVector();
     const auto a = 0.5f * (unit_direction.y + 1.0f);
 
-    return (1.0f - a) * Color{1.0f, 1.0f, 1.0f} + a * Color{0.5f, 0.7f, 1.0f};
+    return (1.0f - a) * Color{1.0f, 1.0f, 1.0f} + (a * Color{0.5f, 0.7f, 1.0f});
 }
 
 } // namespace

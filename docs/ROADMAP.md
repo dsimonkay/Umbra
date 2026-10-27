@@ -142,14 +142,18 @@ Steps:
    z = +1).
    (Done 2026-10-27: RTiOW Image 4. With the interval in `Sphere::Hit` a sphere at z = +1 is gone.)
 3. [x] Simplify the quadratic (the `b = −2h` trick, RTiOW 6.2; why it works: devlog 2026-10-27).
-4. [ ] `HitRecord`, something "hittable", a sphere, a list of objects, an `Interval`.
-   (In progress: `Interval`, `HitRecord`, `Sphere::Hit`, and `Scene`, the book's `world`. The caller owns the
-   scene and passes it to `RenderPixel` as a `const Scene &`. Open: `Scene::Hit` (the closest hit), the
-   ground sphere, `front_face` (RTiOW 6.4).)
+4. [x] `HitRecord`, something "hittable", a sphere, a list of objects, an `Interval`.
+   (Done 2026-10-27: `Interval`, `HitRecord` with `front_face` (RTiOW 6.4), `Sphere::Hit`, and `Scene`, the
+   book's `world` / `hittable_list`. `Scene::Hit` returns the closest hit by shrinking the interval's `max`.
+   No "hittable" base class: see the design choice below. The caller owns the scene and passes it to
+   `RenderPixel` as a `const Scene &`. The small sphere on the ground sphere is RTiOW Image 5.)
 5. [ ] **First unit tests.** Add doctest (or Catch2) via FetchContent and test ray–sphere: hit, miss,
    tangent, ray starting inside. Compare floats with a tolerance. Test `Vector3::Length()` and
    `UnitVector()` here too (no `static_assert`: they are not `constexpr`), and decide whether
-   `NearlyEqual` needs a relative tolerance.
+   `NearlyEqual` needs a relative tolerance (`SetFaceNormal`'s assert uses an absolute `1e-6` on the
+   squared length for now).
+   Also test `Scene::Hit`: it must return the nearer of two spheres in *both* list orders. The first
+   version kept the last hit, and with the ground first in the list it looked right (devlog 2026-10-27).
 
 **A design choice to make (and write down in the devlog):** RTiOW uses `virtual` + `shared_ptr`.
 Alternatives:

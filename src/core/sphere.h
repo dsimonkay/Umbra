@@ -14,6 +14,10 @@ namespace umbra
 /// @brief Represents a sphere in 3D space.
 struct Sphere
 {
+    /// @brief Computes whether a given ray hits this sphere.
+    /// @param ray The emitted ray, trying to hit the sphere
+    /// @param valid_interval The interval within a hit counts as valid
+    /// @return The optional hit record
     [[nodiscard]] std::optional<HitRecord> Hit(const Ray &ray, const Interval &valid_interval) const;
 
     Point3 center{}; // The center of the sphere

@@ -3,6 +3,7 @@
 add_library(umbra_core STATIC
     hit_record.cpp
     render.cpp
+    scene.cpp
     sphere.cpp
 )
 # Includes are written from src/ (#include "core/render.h"); whoever links umbra_core gets that root too.
