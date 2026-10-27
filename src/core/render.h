@@ -2,6 +2,7 @@
 #define UMBRA_CORE_RENDER_H
 
 #include "core/pixel.h"
+#include "core/scene.h"
 
 #include <string_view>
 
@@ -24,10 +25,11 @@ inline constexpr std::string_view kMilestone{"M1 - first light"};
 ///
 /// @param x The x-coordinate of the pixel.
 /// @param y The y-coordinate of the pixel.
+/// @param scene The scene to render.
 /// @param image_width The width of the image.
 /// @param image_height The height of the image.
 /// @return The rendered Pixel at the specified coordinates.
-[[nodiscard]] Pixel RenderPixel(int x, int y, int image_width, int image_height);
+[[nodiscard]] Pixel RenderPixel(const Scene &scene, int x, int y, int image_width, int image_height);
 
 } // namespace umbra
 

@@ -60,7 +60,8 @@ void AdvanceRender(AppState &app)
         const int y = app.next_row;
         for (int x{0}; x < width; ++x)
         {
-            app.framebuffer.PutPixel(x, y, RenderPixel(x, y, width, height));
+            const auto pixel = RenderPixel(app.scene, x, y, width, height);
+            app.framebuffer.PutPixel(x, y, pixel);
         }
         ++app.next_row;
 

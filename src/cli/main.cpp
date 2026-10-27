@@ -108,12 +108,16 @@ int main(int argc, char **argv)
 
     umbra::Framebuffer framebuffer{options->width, options->height};
 
+    // dummy scene with a single sphere
+    umbra::Scene scene{};
+    scene.spheres.push_back({umbra::Point3{0.0f, 0.0f, -1.0f}, 0.5f});
+
     const auto start = std::chrono::steady_clock::now();
     for (int y{0}; y < framebuffer.Height(); ++y)
     {
         for (int x{0}; x < framebuffer.Width(); ++x)
         {
-            framebuffer.PutPixel(x, y, umbra::RenderPixel(x, y, framebuffer.Width(), framebuffer.Height()));
+            framebuffer.PutPixel(x, y, umbra::RenderPixel(scene, x, y, framebuffer.Width(), framebuffer.Height()));
         }
     }
     const std::chrono::duration<double> elapsed = std::chrono::steady_clock::now() - start;

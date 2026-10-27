@@ -4,6 +4,7 @@
 #include "app/settings.h"
 #include "app/texture.h"
 #include "core/framebuffer.h"
+#include "core/scene.h"
 
 #include <raylib.h>
 
@@ -25,6 +26,8 @@ using Clock = std::chrono::steady_clock;
 /// with the same name (umbra::Color already exists) can never be picked up by accident.
 struct AppState
 {
+    Scene scene{};
+
     Framebuffer framebuffer;
 
     Texture texture{};

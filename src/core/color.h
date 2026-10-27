@@ -2,6 +2,7 @@
 #define UMBRA_CORE_COLOR_H
 
 #include "core/pixel.h"
+
 #include <algorithm>
 #include <cstdint>
 #include <type_traits>

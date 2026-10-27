@@ -1,6 +1,6 @@
 #include "core/render.h"
 #include "core/color.h"
-#include "core/ray.h"
+#include "core/scene.h"
 
 #include <cmath>
 
@@ -19,7 +19,7 @@ float HitSphere(const Point3 &sphere_center, const float radius, const Ray &ray)
 
     if (discriminant < 0)
     {
-        return -1.0;
+        return -1.0f;
     }
     else
     {
@@ -27,15 +27,22 @@ float HitSphere(const Point3 &sphere_center, const float radius, const Ray &ray)
     }
 }
 
-Color RayColor(const Ray &ray)
+Color RayColor(const Scene &scene, const Ray &ray)
 {
-    constexpr auto sphere_center = Point3{0.0f, 0.0f, -1.0f};
+    if (scene.spheres.empty())
+    {
+        return Color{0.0f, 0.0f, 0.0f};
+    }
 
-    const auto t = HitSphere(sphere_center, 0.5f, ray);
+    // Currently only handling the first sphere in the scene.
+    const auto [sphere_center, sphere_radius] = scene.spheres[0];
+    // const auto sphere_center = sphere.center;
+
+    const auto t = HitSphere(sphere_center, sphere_radius, ray);
     if (t > 0.0f)
     {
         const Vector3 normal = (ray.At(t) - sphere_center).UnitVector();
-        return 0.5f * Color(normal.x + 1.0f, normal.y + 1.0f, normal.z + 1.0f);
+        return 0.5f * Color{normal.x + 1.0f, normal.y + 1.0f, normal.z + 1.0f};
     }
 
     const auto unit_direction = ray.direction.UnitVector();
@@ -46,7 +53,7 @@ Color RayColor(const Ray &ray)
 
 } // namespace
 
-Pixel RenderPixel(const int x, const int y, const int image_width, const int image_height)
+Pixel RenderPixel(const Scene &scene, const int x, const int y, const int image_width, const int image_height)
 {
     // Camera
     constexpr float focal_length = 1.0f;
@@ -72,7 +79,7 @@ Pixel RenderPixel(const int x, const int y, const int image_width, const int ima
     const auto ray_direction = pixel_center - camera_center;
     const auto ray = Ray{camera_center, ray_direction};
 
-    return ToPixel(RayColor(ray));
+    return ToPixel(RayColor(scene, ray));
 }
 
 } // namespace umbra
