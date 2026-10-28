@@ -12,7 +12,7 @@ set(CMAKE_CXX_SCAN_FOR_MODULES OFF)    # no C++20 modules here; with GCC 14 the 
                                        # end up in compile_commands.json and break clangd and clang-tidy
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)  # for clangd / VS Code IntelliSense
 
-# Third-party code: raylib, Dear ImGui (docking branch), rlImGui.
+# Third-party code: raylib, Dear ImGui (docking branch), rlImGui, Catch2 (tests).
 # Downloaded automatically on the first configure (needs git + internet).
 include(cmake/Dependencies.cmake)
 
@@ -29,7 +29,7 @@ else()
 endif()
 
 # ---------------------------------------------------------------------------
-# Our targets: one directory under src/ each, with its own CMakeLists.txt.
+# Our targets: one directory each (under src/, plus tests/), with its own CMakeLists.txt.
 #
 #   target       directory   links                                      what it is
 #   umbra_core   src/core    -                                          the renderer, plain C++
@@ -38,6 +38,7 @@ endif()
 #   umbra        src/app     umbra_core umbra_io umbra_ui imgui         the GUI application
 #                            raylib rlimgui
 #   umbra-cli    src/cli     umbra_core umbra_io raylib                 the headless renderer
+#   umbra_tests  tests       umbra_core Catch2::Catch2WithMain          unit tests of the core (ctest)
 #
 # The rule: link what you #include. PUBLIC if your own headers include it (Bazel: deps),
 # PRIVATE if only your .cpp files do (Bazel: implementation_deps).
@@ -57,3 +58,4 @@ add_subdirectory(src/io)
 add_subdirectory(src/ui)
 add_subdirectory(src/app)
 add_subdirectory(src/cli)
+add_subdirectory(tests)

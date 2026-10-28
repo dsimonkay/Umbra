@@ -24,7 +24,19 @@ FetchContent_Declare(rlimgui
     GIT_REPOSITORY https://github.com/raylib-extras/rlImGui.git
     GIT_TAG        1550009359ad975927f7f0e4a3f47e3f27123ea9)
 
-FetchContent_MakeAvailable(raylib imgui rlimgui)
+# --- Catch2 v3: unit tests (tests/) ------------------------------------------
+# SYSTEM: our warning flags (umbra_warnings) are not applied to Catch2's headers.
+FetchContent_Declare(Catch2
+    GIT_REPOSITORY https://github.com/catchorg/Catch2.git
+    GIT_TAG        v3.16.1
+    GIT_SHALLOW    TRUE
+    GIT_PROGRESS   TRUE
+    SYSTEM)
+
+FetchContent_MakeAvailable(raylib imgui rlimgui Catch2)
+
+# For include(Catch) in tests/CMakeLists.txt (catch_discover_tests).
+list(APPEND CMAKE_MODULE_PATH "${catch2_SOURCE_DIR}/extras")
 
 # ImGui and rlImGui ship without a CMakeLists.txt, so we build them here.
 add_library(imgui STATIC

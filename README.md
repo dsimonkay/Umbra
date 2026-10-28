@@ -21,14 +21,14 @@ sudo apt install build-essential cmake ninja-build git \
 Then:
 
 ```bash
-cmake --preset release          # the first run downloads raylib, Dear ImGui and rlImGui
+cmake --preset release          # the first run downloads raylib, Dear ImGui, rlImGui and Catch2
 cmake --build --preset release
 ./build/release/umbra
 ```
 
 On WSL the window appears on the Windows desktop through WSLg (Windows 11, or Windows 10 with an
 up-to-date WSL). Keep the repository inside the Linux file system (e.g. `~/projects/umbra`) rather
-than under `/mnt/c`. Builds are much faster there.
+than on a Windows drive (`/mnt/c`, `/mnt/d`, ...). Builds are much faster there.
 
 ### High-DPI screens
 
@@ -85,7 +85,14 @@ Command line:
 ./build/release/umbra-cli --width 1280 --height 720 --out renders/test.png   # no window
 ./build/release/umbra --screenshot renders/ui.png                           # picture of the GUI
 ./build/release/umbra --ui-scale 1.5                                        # UI scale for this run (also 150%, auto)
-ctest --preset release                                                      # tests
+```
+
+Tests (Catch2, in `tests/`). Run them in the `debug` preset, where the asserts are on:
+
+```bash
+cmake --preset debug && cmake --build --preset debug
+ctest --preset debug                      # every test case, plus a CLI smoke test
+./build/debug/umbra_tests "[scene]"       # only the cases tagged [scene]
 ```
 
 ## Layout
@@ -96,12 +103,13 @@ src/io/     framebuffer -> PNG
 src/ui/     the look (theme: colors, fonts, UI scale) and small ImGui widgets
 src/app/    the GUI (raylib + Dear ImGui docking + rlImGui); panels/ has one file per window
 src/cli/    headless renderer
+tests/      unit tests of the core (Catch2), one <name>_test.cpp per core file
 cmake/      pinned third-party dependencies
 docs/       roadmap, devlog, gallery
 ```
 
-Each directory under `src/` is one CMake target with its own `CMakeLists.txt`. The table in the root
-`CMakeLists.txt` shows what links what.
+Each directory under `src/`, and `tests/`, is one CMake target with its own `CMakeLists.txt`. The table in
+the root `CMakeLists.txt` shows what links what.
 
 ## Gallery
 

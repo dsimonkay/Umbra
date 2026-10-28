@@ -6,6 +6,6 @@ add_executable(umbra-cli
 # raylib: main.cpp calls SetTraceLogLevel() to keep raylib quiet.
 target_link_libraries(umbra-cli PRIVATE umbra_core umbra_io raylib umbra_warnings)
 
-# Tests (ctest). For now just a smoke test; real unit tests arrive in M2.
+# A smoke test for ctest: the CLI renders a tiny image without crashing. The unit tests are in tests/.
 add_test(NAME cli_smoke
     COMMAND umbra-cli --width 64 --height 36 --out "${CMAKE_BINARY_DIR}/test-output/smoke.png")

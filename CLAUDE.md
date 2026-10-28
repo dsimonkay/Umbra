@@ -16,25 +16,31 @@ Guidance for Claude Code in this repository.
 ## Build, run, look
 
 ```bash
-cmake --preset release            # first time: also downloads raylib, ImGui, rlImGui
+cmake --preset release            # first time: also downloads raylib, ImGui, rlImGui, Catch2
 cmake --build --preset release
-ctest --preset release            # tests
 ./build/release/umbra             # the GUI
 ./build/release/umbra-cli --out renders/cli.png [--width N --height N]
 ./build/release/umbra --screenshot renders/ui.png   # whole window -> PNG, then quits
 ./build/release/umbra --ui-scale 1.5                # UI scale for this run: 1.5, 150% or auto (works with --screenshot)
 ```
 
-There is also a `debug` preset (asserts on). Build directories are `build/<preset>/`.
+There is also a `debug` preset (asserts on) and an `asan-ubsan` preset. Build directories are
+`build/<preset>/`. Run the tests in `debug`, where the asserts are on:
+
+```bash
+cmake --build --preset debug && ctest --preset debug   # Catch2 unit tests + the CLI smoke test
+./build/debug/umbra_tests "[scene]"                    # one tag; -s also shows the passing checks
+```
 
 **You cannot see the window, but you can read PNG files.** Look at the result after every change:
+- After changing core code, run `ctest --preset debug`.
 - After changing rendering code, run `umbra-cli` and open the PNG.
 - After changing UI code, run `umbra --screenshot` and open the PNG. It needs a display: WSLg
   provides one, and on a headless Linux box use `xvfb-run -a ./build/release/umbra --screenshot ...`.
 
 ## Architecture
 
-One CMake target per directory under `src/`, each with its own `CMakeLists.txt`; the root
+One CMake target per directory under `src/` (and `tests/`), each with its own `CMakeLists.txt`; the root
 `CMakeLists.txt` has a table of what links what. Includes are written from `src/` (`#include "core/render.h"`).
 
 - `src/core/` (`umbra_core`): the renderer. Plain C++, **no raylib or ImGui includes**. Keep it that way:
@@ -56,6 +62,9 @@ One CMake target per directory under `src/`, each with its own `CMakeLists.txt`;
   - `settings.cpp` reads/writes `~/.config/umbra/settings.ini` (the panel layout is `layout.ini` next to
     it; screenshot mode uses neither). `command_line_options.cpp`: `--screenshot`, `--ui-scale`.
 - `src/cli/` (`umbra-cli`): the headless renderer.
+- `tests/` (`umbra_tests`): Catch2 v3 unit tests of the core, one `<name>_test.cpp` per core file, tagged
+  by file (`[scene]`, `[sphere]`, ...). `catch_discover_tests` makes every `TEST_CASE` its own ctest test.
+  Compare floats with Catch2's matchers (`WithinAbs`, `WithinRel`, `WithinULP`), not with `==`.
 - Dependencies are pinned in `cmake/Dependencies.cmake`. **Ask before adding a new dependency.**
 
 Rules that keep it tidy:

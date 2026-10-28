@@ -147,13 +147,19 @@ Steps:
    book's `world` / `hittable_list`. `Scene::Hit` returns the closest hit by shrinking the interval's `max`.
    No "hittable" base class: see the design choice below. The caller owns the scene and passes it to
    `RenderPixel` as a `const Scene &`. The small sphere on the ground sphere is RTiOW Image 5.)
-5. [ ] **First unit tests.** Add doctest (or Catch2) via FetchContent and test ray–sphere: hit, miss,
-   tangent, ray starting inside. Compare floats with a tolerance. Test `Vector3::Length()` and
-   `UnitVector()` here too (no `static_assert`: they are not `constexpr`), and decide whether
-   `NearlyEqual` needs a relative tolerance (`SetFaceNormal`'s assert uses an absolute `1e-6` on the
-   squared length for now).
-   Also test `Scene::Hit`: it must return the nearer of two spheres in *both* list orders. The first
-   version kept the last hit, and with the ground first in the list it looked right (devlog 2026-10-27).
+5. [ ] **First unit tests** with Catch2 v3, the framework you already know.
+   (Scaffolding done 2026-10-28: `tests/` builds `umbra_tests`, one `<name>_test.cpp` per core file, and every
+   `TEST_CASE` is its own ctest test. Run `ctest --preset debug`: release builds have no asserts.)
+   - [x] `Scene::Hit` (`tests/scene_test.cpp`): empty scene, miss, hit, and the nearer of two spheres in
+     *both* list orders. With only one order the test passed against the bug of 2026-10-27; it was seen
+     failing with the bug put back (devlog 2026-10-28).
+   - [ ] `Sphere::Hit`: hit, miss, tangent, ray starting inside, sphere behind the ray, a direction that is
+     not a unit vector. Compare floats with a tolerance (Catch2's `WithinAbs` / `WithinRel` / `WithinULP`
+     matchers). The tangent case needs a decision first: the normal comes out pointing inward (devlog
+     2026-10-28).
+   - [ ] `Vector3::Length()` and `UnitVector()` (no `static_assert`: they are not `constexpr`), and decide
+     whether `NearlyEqual` needs a relative tolerance (`SetFaceNormal`'s assert uses an absolute `1e-6` on
+     the squared length for now).
 
 **A design choice to make (and write down in the devlog):** RTiOW uses `virtual` + `shared_ptr`.
 Alternatives:

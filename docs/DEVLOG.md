@@ -15,6 +15,53 @@ Template:
 
 ---
 
+## 2026-10-28 — M2: Catch2, the first real test (`Scene::Hit`)
+
+- Done:
+  - By Claude (plumbing): Catch2 v3.16.1 in `cmake/Dependencies.cmake` (FetchContent with `SYSTEM`, so our
+    warning flags skip its headers). `tests/` builds `umbra_tests` (links `umbra_core` and
+    `Catch2::Catch2WithMain`), one `<name>_test.cpp` per core file. `catch_discover_tests` makes every
+    `TEST_CASE` its own ctest test, next to the old `cli_smoke`. Checked with GCC 13: `debug` and `asan-ubsan`
+    build without warnings. A deliberately wrong check fails with its values,
+    `0.5f is within 0.00000099999999748 of 0.60000002384185791` (the matchers compute in `double`, so a float
+    literal shows its real value).
+  - `tests/scene_test.cpp`: one `TEST_CASE` with five `SECTION`s. An empty scene hits nothing; a sphere beside
+    the ray is not hit; a sphere on the ray is hit at `t = 0.5`; of two spheres on the ray the nearer one is
+    hit (`t = 1.5`), in both list orders.
+  - Seen it fail: with the line that narrows `valid_interval.max` commented out, the "nearer one added first"
+    section fails: `t` is 11.5 instead of 1.5, the far sphere won.
+  - Moved the repository from `/mnt/d/code/Umbra` to the WSL home: the builds are much faster there.
+- Decided: Catch2, not doctest. I already use it in a private project (and GTest with Bazel at work), and this
+  project is about the ray tracer, not about one more test framework. Its float matchers (`WithinAbs`,
+  `WithinRel`, `WithinULP`, combinable with `||`) make the tolerance of every check explicit.
+- Learned:
+  - My first two-sphere section put the far sphere first, and it passed *with* yesterday's bug: the broken
+    loop keeps the last hit, and the last one was the near sphere. Only the other order catches it. A test is
+    worth something once I have seen it fail.
+  - A `SECTION` is not a ctest test. Catch2 finds the sections by running the `TEST_CASE`: it runs the body
+    from the top once per leaf section (that's why every section gets a fresh `scene`). `--list-tests`, which
+    `catch_discover_tests` reads, only knows the `TEST_CASE`s. To see the sections:
+    `./build/debug/umbra_tests "[scene]" -s`. (Catch2 has fixtures too, `TEST_CASE_METHOD` ≈ GTest's `TEST_F`;
+    not needed here.)
+  - WSL reaches the Windows drives (`/mnt/c`, `/mnt/d`) through a network file system (9P), and a build
+    touches thousands of files. Keep the repository in the Linux file system.
+  - The exact tangent ray, `(0.5, 0, 0) → (0, 0, −1)` against the sphere at `(0, 0, −1)` with r = 0.5: the
+    discriminant is exactly 0, so it hits at `t = 1`. But `direction · n` is exactly 0 as well, so
+    `front_face` is false and the normal points *into* the sphere, `(−1, 0, 0)`, although the ray comes from
+    outside. Rare in practice, but a test has to state something: `<` or `<=` in `SetFaceNormal`?
+  - `kVector3Epsilon = 1e-6` is absolute. Floats are 9.5e-7 apart at 8 and 1.9e-6 apart at 16, so above 16 it
+    means "bit-exact". In Image 5 the `t` near the horizon is about 10, and M5's ground sphere has radius 1000.
+- Interview story: "Have you written a test that passed against the bug it was meant to catch?" Yes: the
+  regression test for my closest-hit bug. The bug made the last sphere in the list win, and my test happened
+  to put the nearer sphere last, so the broken code passed. It came out in review: with the bug put back, the
+  test stayed green. Since then, every new test has to fail once, on purpose, before I trust it.
+- Next tiny step: `tests/sphere_test.cpp` (add it to `tests/CMakeLists.txt`), tag `[sphere]`, the sphere at
+  `(0, 0, −1)` with r = 0.5. Three sections first: a hit from the origin along −z (`t = 0.5`, point
+  `(0, 0, −0.5)`, normal `(0, 0, 1)`, `front_face`); the same ray with direction `(0, 0, −2)` (`t = 0.25`,
+  the same point); the sphere moved to z = +1, behind the ray: no hit with `Interval{0.001f}`, but with
+  `Interval{}`, as in `scene_test.cpp`, it *is* hit, at `t = −1.5`. Then the ray starting inside, and the
+  tangent case after deciding `<` or `<=` in `SetFaceNormal`.
+
 ## 2026-10-27 — M2: `Scene::Hit` and the ground sphere (RTiOW Image 5)
 
 - Done:
